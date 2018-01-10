@@ -1,0 +1,10 @@
+resolver: lts-10.1
+packages:
+- yam-app
+- yam-job
+- yam-servant
+- yam-transaction-odbc
+- yam-transaction-postgresql
+extra-deps:
+- HDBC-odbc-2.5.0.1
+- persistent-odbc-0.2.0.1
