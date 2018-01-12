@@ -1,7 +1,7 @@
 name:                yam-transaction-postgresql
 version:             0.1.6
 description:         Transaction Postgresql Plugin
-homepage:            https://github.com/leptonyu/yam/yam-transaction-postgresql#readme
+homepage:            https://github.com/leptonyu/yam/tree/master/yam-transaction-postgresql#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Daniel YU
@@ -23,4 +23,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/leptonyu/yam-transaction-postgresql
+  location: https://github.com/leptonyu/yam

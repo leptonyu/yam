@@ -1,7 +1,7 @@
 name:                yam-servant
 version:             0.1.6
 description:         Web Module for Yam
-homepage:            https://github.com/leptonyu/yam/yam-servant#readme
+homepage:            https://github.com/leptonyu/yam/tree/master/yam-app#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Daniel YU
@@ -32,4 +32,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/leptonyu/yam-servant
+  location: https://github.com/leptonyu/yam

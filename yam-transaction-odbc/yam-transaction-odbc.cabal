@@ -1,7 +1,7 @@
 name:                yam-transaction-odbc
 version:             0.1.6
 description:         Transaction ODBC Plugin
-homepage:            https://github.com/leptonyu/yam/yam-transaction-odbc#readme
+homepage:            https://github.com/leptonyu/yam/tree/master/yam-transaction-odbc#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Daniel YU
@@ -23,4 +23,4 @@ library
 
 source-repository head
   type:     git
-  location: https://github.com/leptonyu/yam-transaction-odbc
+  location: https://github.com/leptonyu/yam
