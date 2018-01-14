@@ -1,5 +1,5 @@
 name:                yam-transaction-odbc
-version:             0.1.6
+version:             0.1.8
 description:         Transaction ODBC Plugin
 homepage:            https://github.com/leptonyu/yam/tree/master/yam-transaction-odbc#readme
 license:             BSD3

@@ -14,6 +14,7 @@ module Yam.Transaction(
   , DataSourceConnector
   , DataSourceProvider
   , HasDataSource(..)
+  , DataSourceException(..)
   , runTrans
   , selectValue
   , selectNow
@@ -25,7 +26,6 @@ module Yam.Transaction(
 
 import           Yam.Import
 import           Yam.Logger
-import           Yam.Logger.MonadLogger
 import           Yam.Prop
 
 import           Control.Monad.Trans.Control (MonadBaseControl)
@@ -52,7 +52,7 @@ data DataSource = DataSource
   } deriving Show
 
 instance FromJSON DataSource where
-  parseJSON v = runProp v $ do
+  parseJSON v = parseProp v $ do
     dsDt <- getPropOrDefault (dbtype def)  "type"
     dsCn <- getPropOrDefault (conn   def)  "conn"
     dsTh <- getPropOrDefault (thread def)  "thread"
@@ -63,7 +63,7 @@ instance FromJSON DataSource where
 instance Default DataSource where
   def = DataSource "sqlite" ":memory:" 10 True Nothing
 
-class (MonadIO m, MonadBaseControl IO m, MonadLogger m, MonadMask m) => MonadTransaction m where
+class (MonadIO m, MonadBaseControl IO m, MonadYamLogger m, MonadMask m) => MonadTransaction m where
   connectionPool :: m TransactionPool
   setConnectionPool :: TransactionPool -> Maybe TransactionPool -> m ()
   secondaryPool  :: m (Maybe TransactionPool)
@@ -75,7 +75,14 @@ type DataSourceProvider  m a = (Text, DataSourceConnector m a)
 class HasDataSource ds where
   connector :: MonadTransaction m => Proxy ds -> DataSourceConnector m a
 
-initDataSource :: MonadTransaction m => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
+data DataSourceException = DataSourcePoolNotFound Text
+                         | DataSourceNotSupported Text
+                         | DataSourceConfigNotFound Text
+                         deriving Show
+
+instance Exception DataSourceException
+
+initDataSource :: (MonadTransaction m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
 initDataSource maps ds ds2nd action = let map = M.fromList maps in go map ds ds2nd action
   where go map ds ds2 action = do
           logger <- toMonadLogger
@@ -84,7 +91,7 @@ initDataSource maps ds ds2nd action = let map = M.fromList maps in go map ds ds2
               Nothing -> setConnectionPool p Nothing >> action
               Just s2 -> getConnector map logger s2 $ \v -> setConnectionPool p (Just v) >> action
         getConnector map logger ds = case M.lookup (dbtype ds) map of
-            Nothing -> error $ "Datasource " <> cs (dbtype ds) <> " not supported"
+            Nothing -> \_ -> throwM $ DataSourceNotSupported $ cs $ dbtype ds
             Just db -> db logger ds
 
 runTrans :: MonadTransaction m => Transaction a -> m a
@@ -96,7 +103,7 @@ runSecondaryTrans :: MonadTransaction m => Transaction a -> m a
 runSecondaryTrans trans = do
   pool <- secondaryPool
   case pool of
-    Nothing -> error "Secondary Pool not exists"
+    Nothing -> throwM $ DataSourcePoolNotFound "Secondary Pool"
     Just p  -> withLoggerName "Backup" $ executePool trans p
 
 class FromPersistValue a where
@@ -119,7 +126,7 @@ selectNow = head <$> (ask >>= dbNow . connRDBMS)
         dbNow "sqlite"     = selectValue "SELECT CURRENT_TIMESTAMP"
         dbNow "postgresql" = selectValue "SELECT CURRENT_TIMESTAMP"
         dbNow "oracle"     = selectValue "SELECT SYSDATE FROM DUAL"
-        dbNow dbms         = error $ "Datasource " <> cs dbms <> " not supported"
+        dbNow dbms         = throwM $ DataSourceNotSupported $ cs $ dbms
 
 selectValue :: (PersistField a) => Text -> Transaction [a]
 selectValue sql = fmap unSingle <$> rawSql sql []

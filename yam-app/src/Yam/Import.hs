@@ -1,3 +1,6 @@
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+
 module Yam.Import(
     Text
   , pack
@@ -20,6 +23,7 @@ module Yam.Import(
   , mapMaybe
   , catMaybes
   , selectMaybe
+  , mergeMaybe
   , isNothing
   , isJust
   , finally
@@ -27,6 +31,7 @@ module Yam.Import(
   , MonadThrow
   , MonadCatch
   , catchAll
+  , Yam.Import.throwM
   , runReaderT
   , ReaderT
   , ask
@@ -43,9 +48,11 @@ module Yam.Import(
   , decode
   , Default(..)
   , MonadBaseControl
+  , Exception
   ) where
 
 import           Control.Concurrent
+import           Control.Exception           (Exception (..))
 import           Control.Monad
 import           Control.Monad.Catch
 import           Control.Monad.IO.Class      (MonadIO, liftIO)
@@ -53,6 +60,7 @@ import           Control.Monad.Trans.Class
 import           Control.Monad.Trans.Control (MonadBaseControl)
 import           Control.Monad.Trans.Reader  (ReaderT, ask, runReaderT)
 import           Data.Aeson
+import           Data.Aeson.Types
 import           Data.Default
 import           Data.Maybe
 import           Data.Monoid                 ((<>))
@@ -65,8 +73,24 @@ import           Data.Time.Clock.POSIX       (posixSecondsToUTCTime)
 import           Data.Time.Format            (defaultTimeLocale, formatTime)
 import           Data.Time.LocalTime         (utcToLocalZonedTime)
 import           GHC.Generics
+import           GHC.Stack
 import           System.Random               (newStdGen, randoms)
 
+instance MonadThrow Parser where
+  throwM e = fail $ show e
+
+mergeMaybe :: Monoid a => Maybe a -> Maybe a -> Maybe a
+mergeMaybe (Just a) (Just b) = Just $ a <> b
+mergeMaybe Nothing  b        = b
+mergeMaybe a        _        = a
+
+data StackException = forall e. Exception e => StackException e CallStack
+instance Show StackException where
+  show (StackException e call) = show e <> "\n" <> prettyCallStack call
+instance Exception StackException
+
+throwM :: (Exception e, HasCallStack, MonadThrow m) => e -> m a
+throwM e = Control.Monad.Catch.throwM $ StackException e callStack
 
 millisToUTC :: Integer -> UTCTime
 millisToUTC t = posixSecondsToUTCTime $ fromInteger t / 1000

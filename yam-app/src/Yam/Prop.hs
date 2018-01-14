@@ -16,30 +16,47 @@ module Yam.Prop(
   , loadCommandLineArgs
   , mergePropertySource
   , runProp
+  , parseProp
   ) where
 
 import           Yam.Import
 
-import           Data.Aeson          (Result (..), fromJSON)
-import qualified Data.HashMap.Strict as M
-import           Data.List           (foldl')
-import qualified Data.Text           as T
+import           Control.Monad.Except (ExceptT (..), runExceptT)
+import           Data.Aeson           (Result (..), fromJSON)
+import           Data.Aeson.Types
+import qualified Data.HashMap.Strict  as M
+import           Data.List            (foldl')
+import qualified Data.Text            as T
 import           Data.Yaml
-import           System.Directory    (doesFileExist, getFileSize)
-import           System.Environment  (getArgs, getEnvironment)
+import           System.Directory     (doesFileExist, getFileSize)
+import           System.Environment   (getArgs, getEnvironment)
 
 type PropertySource = (Text, Value)
 
 emptyPropertySource :: PropertySource
 emptyPropertySource = ("DEFAULT", Null)
 
-class Monad m => MonadProp m where
+class (Monad m, MonadThrow m) => MonadProp m where
   propertySource :: m PropertySource
 
 type ValueProperty = ReaderT PropertySource
 
-instance (Monad m) => MonadProp (ValueProperty m) where
+instance (Monad m, MonadThrow m) => MonadProp (ValueProperty m) where
   propertySource = ask
+
+data PropException = ParseFailed Text
+                   | KeyNotFound Text
+                   | FileNotFound FilePath
+                   | FileLoadFailed FilePath
+                   deriving Show
+instance Exception PropException
+
+parseProp :: Value -> ValueProperty (ExceptT PropException Parser) a -> Parser a
+parseProp v ma = do
+  eab <- runExceptT $ runProp v ma
+  case eab of
+    Left  e -> fail $ show e
+    Right v -> return v
 
 runProp :: (Monad m) => Value -> ValueProperty m a -> m a
 runProp v ma = runReaderT ma ("NO_NAME", v)
@@ -48,37 +65,37 @@ getPropOrDefault :: (FromJSON a, MonadProp m) => a -> Text -> m a
 getPropOrDefault def key = fromMaybe def <$> getProp key
 
 requiredProp :: (FromJSON a, MonadProp m) => Text -> m a
-requiredProp key = getProp key >>= maybe (error $ "key " <> cs key <> " not found") return
+requiredProp key = getProp key >>= maybe (throwM $ KeyNotFound key) return
 
 getProp :: (FromJSON a, MonadProp m) => Text -> m (Maybe a)
 getProp key  = propertySource >>= go (splitKey key)
-  where go :: (FromJSON a, Monad m) => [Text] -> PropertySource -> m (Maybe a)
+  where go :: (FromJSON a, Monad m, MonadThrow m) => [Text] -> PropertySource -> m (Maybe a)
         go hs (s,v) = to s $ foldl' fetch v hs
         fetch :: Value -> Text -> Value
         fetch (Object map) h = fromMaybe Null $ M.lookup h map
         fetch _            _ = Null
-        to :: (FromJSON a, Monad m) => Text -> Value -> m (Maybe a)
+        to :: (FromJSON a, Monad m, MonadThrow m) => Text -> Value -> m (Maybe a)
         to _ Null = return Nothing
         to s v    = case fromJSON v of
-          Error   e -> error e
+          Error   e -> throwM $ ParseFailed $ cs e
           Success a -> return (Just a)
 splitKey :: Text -> [Text]
 splitKey k | T.null k  = []
            | otherwise = T.split (=='.') k
 
-tryLoadYaml :: (MonadIO m) => FilePath -> m (Maybe PropertySource)
+tryLoadYaml :: (MonadIO m, MonadThrow m) => FilePath -> m (Maybe PropertySource)
 tryLoadYaml file = do
   exists <- liftIO $ doesFileExist file
   if exists
     then do
       size <- liftIO $ getFileSize file
       if size > 0 then
-        Just . (cs file,) <$> (liftIO (decodeFile file) >>= maybe (error $ file <> " load failed") return)
+        Just . (cs file,) <$> (liftIO (decodeFile file) >>= maybe (throwM $ FileLoadFailed file) return)
       else return Nothing
     else return Nothing
 
-loadYaml :: (MonadIO m) => FilePath -> m PropertySource
-loadYaml file = tryLoadYaml file >>= maybe (error $ file <> " not found") return
+loadYaml :: (MonadIO m, MonadThrow m) => FilePath -> m PropertySource
+loadYaml file = tryLoadYaml file >>= maybe (throwM $ FileNotFound file) return
 
 loadEnv :: (MonadIO m) => m PropertySource
 loadEnv = do

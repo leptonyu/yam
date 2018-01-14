@@ -45,7 +45,7 @@ instance FromJSON RunMode where
 runAppM :: (Monad m) => YamContext -> AppM m a -> m a
 runAppM = flip runReaderT
 
-instance MonadIO m => HasYamContext (AppM m) where
+instance (MonadIO m, MonadThrow m) => HasYamContext (AppM m) where
   yamContext = ask
 
 defaultContext :: IO YamContext
@@ -98,7 +98,7 @@ enable keyEnable def key action = do
 keyLogger :: Text
 keyLogger = "Extension.Logger"
 
-instance MonadIO m => MonadLogger (AppM m) where
+instance (MonadIO m, MonadThrow m) => MonadYamLogger (AppM m) where
   loggerConfig     = do
     context <- yamContext
     getExtensionOrDefault (defLogger context) keyLogger
@@ -107,7 +107,7 @@ instance MonadIO m => MonadLogger (AppM m) where
 keyProp :: Text
 keyProp = "Extension.Prop"
 
-instance MonadIO m => MonadProp (AppM m) where
+instance (MonadIO m, MonadThrow m) => MonadProp (AppM m) where
   propertySource = requireExtension keyProp
 
 evalProp :: FromJSON a => YamContext -> Text -> IO (Maybe a)
@@ -131,13 +131,13 @@ instance (MonadIO m, MonadBaseControl IO m, MonadMask m) => MonadTransaction (Ap
 keyEvent :: Text
 keyEvent = "Extension.Event."
 
-instance MonadIO m => MonadEvent (AppM m) where
+instance (MonadIO m, MonadThrow m) => MonadEvent (AppM m) where
   eventHandler proxy = getExtensionOrDefault [] $ keyEvent <> cs (eventKey proxy)
 
-registerEventHandler :: (MonadIO m, Event e) => Proxy e -> (e -> AppM IO ()) -> AppM m ()
+registerEventHandler :: (MonadIO m, MonadThrow m, Event e) => Proxy e -> (e -> AppM IO ()) -> AppM m ()
 registerEventHandler p = registerEventHandler' p Nothing
 
-registerEventHandler' :: (MonadIO m, Event e) => Proxy e -> Maybe Text -> (e -> AppM IO ()) -> AppM m ()
+registerEventHandler' :: (MonadIO m, MonadThrow m, Event e) => Proxy e -> Maybe Text -> (e -> AppM IO ()) -> AppM m ()
 registerEventHandler' p hname h = do
   hs      <- eventHandler p
   context <- ask

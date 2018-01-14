@@ -19,10 +19,10 @@ class (ToJSON e, Typeable e) => Event e where
   eventKey :: Proxy e -> String
   eventKey = show . typeRep
 
-thenNotify :: (Event e, MonadLogger m, MonadMask m, MonadEvent m) => m a -> e -> m a
+thenNotify :: (Event e, MonadYamLogger m, MonadMask m, MonadEvent m) => m a -> e -> m a
 thenNotify ma e = do
   a <- ma
-  let printStack :: (Event e, MonadLogger m) => e -> SomeException -> m ()
+  let printStack :: (Event e, MonadYamLogger m) => e -> SomeException -> m ()
       printStack e x = do
           errorLn $ "Event "      <> encodeToText e <> " Failed!"
           errorLn $ "Exception: " <> showText x

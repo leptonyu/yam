@@ -1,20 +1,42 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE OverloadedStrings     #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
+{-# LANGUAGE OverloadedStrings         #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE TypeOperators             #-}
 
-module Yam.Servant where
+module Yam.Servant(
+    App
+  , ServantWrapException(..)
+  , API(..)
+  , MkApplication
+  , ApiToApplication
+  , emptyApi
+  , emptyApplication
+  , mkServe
+  , toAPI
+  , addApi
+  , startSimpleJob
+  , startMain
+  , InitializeYamContext
+  , DataSourceProviders
+  , MigrateSQL
+  , LoadYamJobs
+  ) where
 
 import           Yam.App
 import           Yam.Job
-import           Yam.Logger.WaiLogger
+import           Yam.Logger
 import           Yam.Transaction.Sqlite
 
-import           Control.Exception                 (SomeException, catch)
+import           Control.Exception
+    ( SomeException
+    , catch
+    , fromException
+    )
 import           Control.Lens                      hiding (Context)
 import           Data.Swagger                      hiding
     ( Header
@@ -22,21 +44,36 @@ import           Data.Swagger                      hiding
     , port
     )
 import qualified Data.Text                         as T
+import           Data.Typeable                     (cast)
+import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.AddHeaders (addHeaders)
 import           Servant
+import           Servant.Server.Internal           (responseServantErr)
 import           Servant.Swagger
 import           Servant.Swagger.UI
 import           Servant.Utils.Enter
 
 type App = AppM Handler
 
+data ServantWrapException = forall e. Exception e => Wrap ServantErr e
+
+instance Show ServantWrapException where
+  show (Wrap _ e) = show e
+instance Exception ServantWrapException
+
 exceptionHandler ::(MonadIO m) => (Text -> m ())
                                -> (m ResponseReceived -> IO ResponseReceived)
                                -> SomeException
                                -> Application
-exceptionHandler = undefined
+exceptionHandler log run e _ resH = run $ do
+  log    $ showText e
+  liftIO $ resH $ responseServantErr $ go e
+  where go :: SomeException -> ServantErr
+        go e  = case fromException e :: Maybe ServantWrapException of
+          Just (Wrap err _) -> err
+          _                 -> err400
 
 -- add Correlation-Id and exception convert
 middleWare :: YamContext -> Middleware
@@ -140,7 +177,7 @@ showConf = do
   when (conn ds /= ":memory:") $
     infoLn  $ "  Thread      : "         <> showText (thread ds)
   forM_ ds2 $ \d2 -> do
-    infoLn  $ " Secondary DB : "
+    infoLn    " Secondary DB : "
     infoLn  $ "  Database    : "         <> showText (dbtype d2)
     infoLn  $ "  ConnStr     : "         <> showText (conn   d2)
     when (conn d2 /= ":memory:") $

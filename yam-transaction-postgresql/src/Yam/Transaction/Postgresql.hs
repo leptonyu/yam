@@ -3,7 +3,7 @@
 module Yam.Transaction.Postgresql where
 
 import           Yam.Import
-import           Yam.Logger.MonadLogger
+import           Yam.Logger
 import           Yam.Transaction
 
 import           Database.Persist.Postgresql

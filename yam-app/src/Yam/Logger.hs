@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
@@ -5,7 +6,7 @@
 module Yam.Logger(
     LogRank(..)
   , LoggerConfig(..)
-  , MonadLogger(..)
+  , MonadYamLogger(..)
   , logL
   , logLn
   , errorLn
@@ -16,13 +17,19 @@ module Yam.Logger(
   , stdoutLogger
   , fileLogger
   , withLoggerName
+  , toMonadLogger
+  , toWaiLogger
+  , runLoggingT
   ) where
 
 import           Yam.Import
 
 import qualified Control.Concurrent.Map     as M
 import           Control.Monad.Catch        (bracket_)
+import           Control.Monad.Logger
 import           Control.Monad.Trans.Reader
+import           GHC.Stack
+import           Network.Wai.Logger
 import           System.Log.FastLogger
 
 data LogRank = TRACE
@@ -51,49 +58,62 @@ data LoggerConfig = LoggerConfig
    , name   :: LoggerCache
    }
 
-class (MonadIO m) => MonadLogger m where
+class (MonadIO m) => MonadYamLogger m where
   loggerConfig     :: m LoggerConfig
   withLoggerConfig :: LoggerConfig -> m a -> m a
 
-instance (MonadIO m) => MonadLogger (ReaderT LoggerConfig m) where
+instance (MonadIO m) => MonadYamLogger (ReaderT LoggerConfig m) where
   loggerConfig     = ask
   withLoggerConfig = withReaderT . const
 
-logL :: (MonadLogger m) => forall msg . (ToLogStr msg) => LogRank -> msg -> m ()
-logL r msg = do
+logL :: (MonadYamLogger m, HasCallStack) => forall msg . (ToLogStr msg) => LogRank -> msg -> m ()
+logL = logL' callStack
+
+logL' :: (MonadYamLogger m) => forall msg . (ToLogStr msg) => CallStack -> LogRank -> msg -> m ()
+logL' callStack r msg = do
   conf    <- loggerConfig
   mayName <- fetchName
   liftIO $ when (r >= rank conf) $ do
     now      <- clock conf
-    logger conf (cs now) (cs <$> mayName) r (toLogStr msg)
+    logger conf (cs now) (cs <$> mayName `mergeMaybe` getName (getCallStack callStack)) r (toLogStr msg)
+  where getName []          = Nothing
+        getName ((_,loc):_) = Just $ cs $ srcLocModule loc
 
-fetchName :: MonadLogger m => m (Maybe Text)
+fetchName :: MonadYamLogger m => m (Maybe Text)
 fetchName = do
   conf <- loggerConfig
   liftIO $ do
     threadId <- myThreadId
     M.lookup threadId $ name conf
 
-setName :: MonadLogger m => Maybe Text -> m ()
+setName :: MonadYamLogger m => Maybe Text -> m ()
 setName m = do
   conf <- loggerConfig
   liftIO $ myThreadId >>= void . go m (name conf)
   where go (Just m) cache tid = M.insert tid m cache
         go _        cache tid = M.delete tid   cache
 
-logLn :: (MonadLogger m) => LogRank -> Text -> m ()
-logLn l msg = logL l $ msg <> "\n"
+logLn :: (MonadYamLogger m, HasCallStack) =>  LogRank -> Text -> m ()
+logLn = logLn' callStack
 
-traceLn :: (MonadLogger m) => Text -> m ()
-traceLn = logLn TRACE
-debugLn :: (MonadLogger m) => Text -> m ()
-debugLn = logLn DEBUG
-infoLn  :: (MonadLogger m) => Text -> m ()
-infoLn  = logLn INFO
-warnLn  :: (MonadLogger m) => Text -> m ()
-warnLn  = logLn WARN
-errorLn :: (MonadLogger m) => Text -> m ()
-errorLn = logLn ERROR
+logLn' :: (MonadYamLogger m) => CallStack -> LogRank -> Text -> m ()
+logLn' call l msg = logL' call l $ msg <> "\n"
+
+traceLn :: (MonadYamLogger m, HasCallStack) => Text -> m ()
+traceLn = logLn' callStack TRACE
+{-# INLINE traceLn #-}
+debugLn :: (MonadYamLogger m, HasCallStack) => Text -> m ()
+debugLn = logLn' callStack DEBUG
+{-# INLINE debugLn #-}
+infoLn  :: (MonadYamLogger m, HasCallStack) => Text -> m ()
+infoLn  = logLn' callStack INFO
+{-# INLINE infoLn #-}
+warnLn  :: (MonadYamLogger m, HasCallStack) => Text -> m ()
+warnLn  = logLn' callStack WARN
+{-# INLINE warnLn #-}
+errorLn :: (MonadYamLogger m, HasCallStack) => Text -> m ()
+errorLn = logLn' callStack ERROR
+{-# INLINE errorLn #-}
 
 defaultLoggerConfig :: LoggerFunc -> IO LoggerConfig
 defaultLoggerConfig func = do
@@ -122,7 +142,7 @@ newLog = defaultLoggerConfig . mkLogger . pushLogStr
                   <> " - "
           logger $ toLogStr name <> msg
 
-withLoggerName :: (MonadLogger m, MonadMask m) => Text -> m a -> m a
+withLoggerName :: (MonadYamLogger m, MonadMask m) => Text -> m a -> m a
 withLoggerName nm action = do
   mayName <- fetchName
   let mayName' = Just $ merge nm mayName
@@ -130,9 +150,27 @@ withLoggerName nm action = do
   where merge n (Just v) = v <> "." <> n
         merge n _        = n
 
-withLogger :: (MonadLogger m) => (LoggerConfig -> LoggerConfig) -> m a -> m a
+withLogger :: (MonadYamLogger m) => (LoggerConfig -> LoggerConfig) -> m a -> m a
 withLogger modify action = do
   conf    <- loggerConfig
   withLoggerConfig (modify conf) action
 
 
+type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+
+toMonadLogger :: (MonadYamLogger m) => m LogFunc
+toMonadLogger = mkLogger <$> loggerConfig
+   where toRank LevelDebug = DEBUG
+         toRank LevelInfo  = INFO
+         toRank LevelWarn  = WARN
+         toRank LevelError = ERROR
+         toRank _          = INFO
+         mkLogger :: HasCallStack => LoggerConfig -> LogFunc
+         mkLogger context  _ name level msg = runReaderT (withLoggerName name $ logL' callStack (toRank level) (msg <> "\n")) context
+
+toWaiLogger :: (MonadYamLogger m) => m ApacheLogger
+toWaiLogger = do mkLogger <- flip runReaderT <$> loggerConfig
+                 liftIO   $  apacheLogger
+                         <$> initLogger FromFallback (LogCallback (mkLogger . go) $ return ()) (return "")
+                 where go :: HasCallStack => LogStr -> ReaderT LoggerConfig IO ()
+                       go = logL' callStack INFO
