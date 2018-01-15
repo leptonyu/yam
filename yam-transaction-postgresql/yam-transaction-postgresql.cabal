@@ -1,5 +1,5 @@
 name:                yam-transaction-postgresql
-version:             0.1.9
+version:             0.1.10
 description:         Transaction Postgresql Plugin
 homepage:            https://github.com/leptonyu/yam/tree/master/yam-transaction-postgresql#readme
 license:             BSD3

@@ -29,7 +29,6 @@ module Yam.Servant(
 
 import           Yam.App
 import           Yam.Job
-import           Yam.Logger
 import           Yam.Transaction.Sqlite
 
 import           Control.Exception
@@ -45,8 +44,6 @@ import           Data.Swagger                      hiding
     , port
     )
 import qualified Data.Text                         as T
-import           Data.Typeable                     (cast)
-import           Network.HTTP.Types.Status
 import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.AddHeaders (addHeaders)

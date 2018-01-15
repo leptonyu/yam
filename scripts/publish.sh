@@ -21,6 +21,8 @@ if [ -z "$HACKAGE_USER" -o -z "$HACKAGE_PASS" ]; then
   exit 1
 fi
 
+stack haddock
+
 ls | grep yam- | while read pkg; do
   stack sdist $pkg && stack upload $pkg
   cd $pkg

@@ -27,7 +27,7 @@ class MonadIO m => MonadJob m where
 keyJob :: Text
 keyJob = "Extension.Job"
 
-instance (MonadIO m, MonadThrow m) => MonadJob (AppM m) where
+instance (MonadIO m, MonadMask m) => MonadJob (AppM m) where
   yamJobs = getExtensionOrDefault [] keyJob
   killJobs = yamJobs >>= mapM_ go >> setExtension keyJob ([] :: [(ThreadId, YamJob)])
     where go (tid,job) = do infoLn $ "Stop job " <> name (job :: YamJob) <> "..."
@@ -42,7 +42,7 @@ instance (MonadIO m, MonadThrow m) => MonadJob (AppM m) where
                            runAppM context $ withLoggerName (reqId <> " job." <> nm)
                                            $ do infoLn $ "Start job " <> nm
                                                 func job
-                                                infoLn $ "End job " <> nm
+                                                infoLn ("End job " <> nm)
     jobs <- yamJobs
     setExtension keyJob ((thread,job):jobs)
 

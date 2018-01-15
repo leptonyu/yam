@@ -20,15 +20,14 @@ module Yam.Prop(
 
 import           Yam.Import
 
-import           Control.Monad.Except (ExceptT (..), runExceptT)
-import           Data.Aeson           (Result (..), fromJSON)
+import           Data.Aeson          (Result (..), fromJSON)
 import           Data.Aeson.Types
-import qualified Data.HashMap.Strict  as M
-import           Data.List            (foldl')
-import qualified Data.Text            as T
+import qualified Data.HashMap.Strict as M
+import           Data.List           (foldl')
+import qualified Data.Text           as T
 import           Data.Yaml
-import           System.Directory     (doesFileExist, getFileSize)
-import           System.Environment   (getArgs, getEnvironment)
+import           System.Directory    (doesFileExist, getFileSize)
+import           System.Environment  (getArgs, getEnvironment)
 
 type PropertySource = (Text, Value)
 

@@ -26,7 +26,6 @@ module Yam.Transaction(
 
 import           Yam.Import
 import           Yam.Logger
-import           Yam.Prop
 
 import           Control.Monad.Trans.Control (MonadBaseControl)
 import           Data.Acquire                (with)
@@ -84,7 +83,7 @@ data DataSourceException = DataSourcePoolNotFound Text
 
 instance Exception DataSourceException
 
-initDataSource :: (MonadTransaction m, MonadThrow m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
+initDataSource :: (MonadTransaction m, MonadMask m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
 initDataSource maps ds ds2nd action = let map = M.fromList maps in go map ds ds2nd action
   where go map ds ds2 action = do
           logger <- toMonadLogger

@@ -73,5 +73,7 @@ lockExtenstion = setExtension extensionLockKey True
 unlockExtenstion :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m ()
 unlockExtenstion = setExtension extensionLockKey False
 
-cleanContext :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m () -> m ()
-cleanContext action = unlockExtenstion >> action
+cleanContext :: (MonadYamLogger m, HasYamContext m, MonadMask m)  => m () -> m ()
+cleanContext action = do
+  debugLn $ "Clean up context"
+  unlockExtenstion `finally` action
