@@ -16,7 +16,6 @@ module Yam.Prop(
   , loadCommandLineArgs
   , mergePropertySource
   , runProp
-  , parseProp
   ) where
 
 import           Yam.Import
@@ -36,48 +35,48 @@ type PropertySource = (Text, Value)
 emptyPropertySource :: PropertySource
 emptyPropertySource = ("DEFAULT", Null)
 
-class (Monad m, MonadThrow m) => MonadProp m where
+class Monad m => MonadProp m where
   propertySource :: m PropertySource
 
 type ValueProperty = ReaderT PropertySource
 
-instance (Monad m, MonadThrow m) => MonadProp (ValueProperty m) where
+instance Monad m => MonadProp (ValueProperty m) where
   propertySource = ask
 
-data PropException = ParseFailed Text
+data PropException = ParseFailed Text Text
                    | KeyNotFound Text
+                   | TypeMismatch Text
                    | FileNotFound FilePath
                    | FileLoadFailed FilePath
                    deriving Show
 instance Exception PropException
 
-parseProp :: Value -> ValueProperty (ExceptT PropException Parser) a -> Parser a
-parseProp v ma = do
-  eab <- runExceptT $ runProp v ma
-  case eab of
-    Left  e -> fail $ show e
-    Right v -> return v
-
 runProp :: (Monad m) => Value -> ValueProperty m a -> m a
 runProp v ma = runReaderT ma ("NO_NAME", v)
 
-getPropOrDefault :: (FromJSON a, MonadProp m) => a -> Text -> m a
+getPropOrDefault :: (FromJSON a, MonadThrow m, MonadProp m) => a -> Text -> m a
 getPropOrDefault def key = fromMaybe def <$> getProp key
 
-requiredProp :: (FromJSON a, MonadProp m) => Text -> m a
+requiredProp :: (FromJSON a, MonadThrow m, MonadProp m) => Text -> m a
 requiredProp key = getProp key >>= maybe (throwM $ KeyNotFound key) return
 
-getProp :: (FromJSON a, MonadProp m) => Text -> m (Maybe a)
-getProp key  = propertySource >>= go (splitKey key)
-  where go :: (FromJSON a, Monad m, MonadThrow m) => [Text] -> PropertySource -> m (Maybe a)
-        go hs (s,v) = to s $ foldl' fetch v hs
-        fetch :: Value -> Text -> Value
-        fetch (Object map) h = fromMaybe Null $ M.lookup h map
-        fetch _            _ = Null
-        to :: (FromJSON a, Monad m, MonadThrow m) => Text -> Value -> m (Maybe a)
-        to _ Null = return Nothing
-        to s v    = case fromJSON v of
-          Error   e -> throwM $ ParseFailed $ cs e
+getProp :: (FromJSON a, MonadThrow m, MonadProp m) => Text -> m (Maybe a)
+getProp key  = propertySource >>= go key (splitKey key)
+  where go :: (FromJSON a, Monad m, MonadThrow m) => Text -> [Text] -> PropertySource -> m (Maybe a)
+        go key hs (s,v) = to key s $ foldl' fetch (Just v) hs
+        fetch :: Maybe Value -> Text -> Maybe Value
+        fetch  Nothing      _ = Nothing
+        fetch  (Just v)     h = fetch' v h
+        fetch' Null         _ = Just Null
+        fetch' (Object map) h = case M.lookup h map of
+          Just v  -> Just v
+          Nothing -> Just Null
+        fetch' v            h = Nothing
+        to :: (FromJSON a, Monad m, MonadThrow m) => Text -> Text -> Maybe Value -> m (Maybe a)
+        to k s Nothing     = throwM $ TypeMismatch k
+        to _ _ (Just Null) = return Nothing
+        to k s (Just v)    = case fromJSON v of
+          Error   e -> throwM $ ParseFailed k $ cs e
           Success a -> return (Just a)
 splitKey :: Text -> [Text]
 splitKey k | T.null k  = []
@@ -122,7 +121,7 @@ convertValue = toValue . mapMaybe go
         to ([],   _) = Nothing
         toValue :: [([Text], Value)] -> Value
         toValue [([],value)] = value
-        toValue vs           = Object $ M.map toValue $ M.fromListWith (++) $ mapMaybe to vs
+        toValue vs           = Object $ M.map toValue $ M.fromListWith (<>) $ mapMaybe to vs
 
 mergePropertySource :: [PropertySource] -> PropertySource
 mergePropertySource = foldl' merge emptyPropertySource

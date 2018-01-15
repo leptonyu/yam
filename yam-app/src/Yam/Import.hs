@@ -45,6 +45,7 @@ module Yam.Import(
   , encodeToText
   , FromJSON(..)
   , ToJSON(..)
+  , typeMismatch
   , decode
   , Default(..)
   , MonadBaseControl

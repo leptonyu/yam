@@ -17,5 +17,5 @@ instance HasDataSource SQLite where
     where toThread ds | conn ds == conn def = 1
                       | otherwise           = thread ds
 
-sqliteProvider :: MonadTransaction m => DataSourceProvider m a
+sqliteProvider :: (MonadTransaction m, MonadThrow m) => DataSourceProvider m a
 sqliteProvider = ("sqlite", connector (Proxy :: Proxy SQLite))

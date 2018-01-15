@@ -30,6 +30,7 @@ import           Yam.Prop
 
 import           Control.Monad.Trans.Control (MonadBaseControl)
 import           Data.Acquire                (with)
+import           Data.Aeson
 import           Data.Conduit
 import qualified Data.Conduit.List           as CL
 import           Data.Either                 (rights)
@@ -52,18 +53,19 @@ data DataSource = DataSource
   } deriving Show
 
 instance FromJSON DataSource where
-  parseJSON v = parseProp v $ do
-    dsDt <- getPropOrDefault (dbtype def)  "type"
-    dsCn <- getPropOrDefault (conn   def)  "conn"
-    dsTh <- getPropOrDefault (thread def)  "thread"
-    dsMi <- getPropOrDefault (Yam.Transaction.migrate def) "migrate"
-    dsEx <- getProp "extra"
+  parseJSON (Object v) = do
+    dsDt <- v .:? "type"    .!= dbtype def
+    dsCn <- v .:? "conn"    .!= conn   def
+    dsTh <- v .:? "thread"  .!= thread def
+    dsMi <- v .:? "migrate" .!= Yam.Transaction.migrate def
+    dsEx <- v .:? "extra"
     return $ DataSource dsDt dsCn dsTh dsMi dsEx
+  parseJSON v = typeMismatch "DataSource" v
 
 instance Default DataSource where
   def = DataSource "sqlite" ":memory:" 10 True Nothing
 
-class (MonadIO m, MonadBaseControl IO m, MonadYamLogger m, MonadMask m) => MonadTransaction m where
+class (MonadIO m, MonadBaseControl IO m, MonadYamLogger m) => MonadTransaction m where
   connectionPool :: m TransactionPool
   setConnectionPool :: TransactionPool -> Maybe TransactionPool -> m ()
   secondaryPool  :: m (Maybe TransactionPool)
@@ -73,7 +75,7 @@ type DataSourceConnector m a = LogFunc -> DataSource -> (TransactionPool -> m a)
 type DataSourceProvider  m a = (Text, DataSourceConnector m a)
 
 class HasDataSource ds where
-  connector :: MonadTransaction m => Proxy ds -> DataSourceConnector m a
+  connector :: (MonadTransaction m, MonadThrow m) => Proxy ds -> DataSourceConnector m a
 
 data DataSourceException = DataSourcePoolNotFound Text
                          | DataSourceNotSupported Text
@@ -82,7 +84,7 @@ data DataSourceException = DataSourcePoolNotFound Text
 
 instance Exception DataSourceException
 
-initDataSource :: (MonadTransaction m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
+initDataSource :: (MonadTransaction m, MonadThrow m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
 initDataSource maps ds ds2nd action = let map = M.fromList maps in go map ds ds2nd action
   where go map ds ds2 action = do
           logger <- toMonadLogger
@@ -99,7 +101,7 @@ runTrans trans = connectionPool >>= executePool trans
 
 executePool trans p = liftIO (runSqlPool trans p)
 
-runSecondaryTrans :: MonadTransaction m => Transaction a -> m a
+runSecondaryTrans :: (MonadTransaction m, MonadMask m) => Transaction a -> m a
 runSecondaryTrans trans = do
   pool <- secondaryPool
   case pool of
@@ -126,7 +128,7 @@ selectNow = head <$> (ask >>= dbNow . connRDBMS)
         dbNow "sqlite"     = selectValue "SELECT CURRENT_TIMESTAMP"
         dbNow "postgresql" = selectValue "SELECT CURRENT_TIMESTAMP"
         dbNow "oracle"     = selectValue "SELECT SYSDATE FROM DUAL"
-        dbNow dbms         = throwM $ DataSourceNotSupported $ cs $ dbms
+        dbNow dbms         = throwM $ DataSourceNotSupported $ cs dbms
 
 selectValue :: (PersistField a) => Text -> Transaction [a]
 selectValue sql = fmap unSingle <$> rawSql sql []

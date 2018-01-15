@@ -15,5 +15,5 @@ instance HasDataSource PostgreSQL where
   connector _ logger ds a = runLoggingT (withPostgresqlPool (cs $ conn ds) (thread ds) (lift.a)) logger
 
 
-postgresqlProvider :: MonadTransaction m => DataSourceProvider m a
+postgresqlProvider :: (MonadTransaction m, MonadThrow m) => DataSourceProvider m a
 postgresqlProvider = ("postgresql", connector (Proxy :: Proxy PostgreSQL))

@@ -58,7 +58,7 @@ data LoggerConfig = LoggerConfig
    , name   :: LoggerCache
    }
 
-class (MonadIO m) => MonadYamLogger m where
+class MonadIO m => MonadYamLogger m where
   loggerConfig     :: m LoggerConfig
   withLoggerConfig :: LoggerConfig -> m a -> m a
 
@@ -69,15 +69,15 @@ instance (MonadIO m) => MonadYamLogger (ReaderT LoggerConfig m) where
 logL :: (MonadYamLogger m, HasCallStack) => forall msg . (ToLogStr msg) => LogRank -> msg -> m ()
 logL = logL' callStack
 
-logL' :: (MonadYamLogger m) => forall msg . (ToLogStr msg) => CallStack -> LogRank -> msg -> m ()
+logL' :: MonadYamLogger m => forall msg . (ToLogStr msg) => CallStack -> LogRank -> msg -> m ()
 logL' callStack r msg = do
   conf    <- loggerConfig
   mayName <- fetchName
   liftIO $ when (r >= rank conf) $ do
     now      <- clock conf
-    logger conf (cs now) (cs <$> mayName `mergeMaybe` getName (getCallStack callStack)) r (toLogStr msg)
+    logger conf (cs now) (getName (getCallStack callStack) `mergeMaybe` (cs <$> mayName)) r (toLogStr msg)
   where getName []          = Nothing
-        getName ((_,loc):_) = Just $ cs $ srcLocModule loc
+        getName ((_,loc):_) = Just $ (<>" ") $ cs $ srcLocModule loc
 
 fetchName :: MonadYamLogger m => m (Maybe Text)
 fetchName = do
@@ -165,12 +165,12 @@ toMonadLogger = mkLogger <$> loggerConfig
          toRank LevelWarn  = WARN
          toRank LevelError = ERROR
          toRank _          = INFO
-         mkLogger :: HasCallStack => LoggerConfig -> LogFunc
-         mkLogger context  _ name level msg = runReaderT (withLoggerName name $ logL' callStack (toRank level) (msg <> "\n")) context
+         mkLogger :: LoggerConfig -> LogFunc
+         mkLogger context = let go :: HasCallStack => LogFunc
+                                go _ name level msg = runReaderT (withLoggerName name $ logL' callStack (toRank level) (msg <> "\n")) context
+                            in go
 
 toWaiLogger :: (MonadYamLogger m) => m ApacheLogger
 toWaiLogger = do mkLogger <- flip runReaderT <$> loggerConfig
                  liftIO   $  apacheLogger
-                         <$> initLogger FromFallback (LogCallback (mkLogger . go) $ return ()) (return "")
-                 where go :: HasCallStack => LogStr -> ReaderT LoggerConfig IO ()
-                       go = logL' callStack INFO
+                         <$> initLogger FromFallback (LogCallback (mkLogger . logL' emptyCallStack INFO) $ return ()) (return "")

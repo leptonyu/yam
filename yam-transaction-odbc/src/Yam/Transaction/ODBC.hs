@@ -30,7 +30,7 @@ instance KnownSymbol db => HasDataSource (ODBC db)  where
           toDbTp "oracle"    = Just (Oracle False)
           toDbTp _           = Nothing
 
-oracleProvider :: MonadTransaction m => DataSourceProvider m a
+oracleProvider :: (MonadTransaction m, MonadThrow m) => DataSourceProvider m a
 oracleProvider    = ("oracle", connector (Proxy :: Proxy (ODBC "oracle")))
-oracle12cProvider :: MonadTransaction m => DataSourceProvider m a
+oracle12cProvider :: (MonadTransaction m, MonadThrow m) => DataSourceProvider m a
 oracle12cProvider = ("oracle12c", connector (Proxy :: Proxy (ODBC "oracle12c")))

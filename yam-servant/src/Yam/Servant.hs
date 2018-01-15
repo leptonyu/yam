@@ -38,6 +38,7 @@ import           Control.Exception
     , fromException
     )
 import           Control.Lens                      hiding (Context)
+import           Data.Aeson
 import           Data.Swagger                      hiding
     ( Header
     , HeaderName
@@ -146,10 +147,11 @@ data Config = Config
   } deriving Show
 
 instance FromJSON Config where
-  parseJSON v = runProp v $ do
-      scPort   <- getPropOrDefault (port def) "port"
-      scMode   <- getPropOrDefault (mode def) "mode"
+  parseJSON (Object v) = do
+      scPort   <- v .:? "port" .!= port def
+      scMode   <- v .:? "mode" .!= mode def
       return $ Config scPort scMode
+  parseJSON v          = typeMismatch "Config" v
 
 instance Default Config where
   def = Config 8888 Development

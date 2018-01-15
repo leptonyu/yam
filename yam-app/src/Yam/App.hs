@@ -42,10 +42,10 @@ instance FromJSON RunMode where
           go "production" = Production
           go _            = Development
 
-runAppM :: (Monad m) => YamContext -> AppM m a -> m a
+runAppM :: Monad m => YamContext -> AppM m a -> m a
 runAppM = flip runReaderT
 
-instance (MonadIO m, MonadThrow m) => HasYamContext (AppM m) where
+instance MonadIO m => HasYamContext (AppM m) where
   yamContext = ask
 
 defaultContext :: IO YamContext
