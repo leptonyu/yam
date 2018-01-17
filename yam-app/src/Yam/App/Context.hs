@@ -7,7 +7,8 @@ module Yam.App.Context(
   , getExtensionOrDefault
   , getExtension
   , setExtension
-  , lockExtenstion
+  , withExtension
+  , lockExtension
   , emptyContext
   , cleanContext
   , YamContextException
@@ -67,13 +68,18 @@ checkLock = getExtensionOrDefault False extensionLockKey >>= go
   where go True = throwM ExtensionHasFreezed
         go _    = return ()
 
-lockExtenstion :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m ()
-lockExtenstion = setExtension extensionLockKey True
+lockExtension :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m ()
+lockExtension = setExtension extensionLockKey True
 
-unlockExtenstion :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m ()
-unlockExtenstion = setExtension extensionLockKey False
+unlockExtension :: (MonadYamLogger m, HasYamContext m, MonadThrow m)  => m ()
+unlockExtension = setExtension extensionLockKey False
+
+withExtension :: (MonadYamLogger m, HasYamContext m, MonadMask m, Typeable a) => Text -> a -> m b -> m b
+withExtension k a action = do
+  setExtension k a
+  action `finally` go k
+  where go key = do extension >>= void . liftIO . M.delete key
+                    traceLn $ "Unregister extension <<" <> key <> ">>"
 
 cleanContext :: (MonadYamLogger m, HasYamContext m, MonadMask m)  => m () -> m ()
-cleanContext action = do
-  debugLn $ "Clean up context"
-  unlockExtenstion `finally` action
+cleanContext action = unlockExtension `finally` action

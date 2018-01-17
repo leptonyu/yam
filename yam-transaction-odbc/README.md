@@ -1,1 +1,0 @@
-# yam-transaction-odbc

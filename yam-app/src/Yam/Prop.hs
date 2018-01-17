@@ -54,7 +54,7 @@ runProp :: (Monad m) => Value -> ValueProperty m a -> m a
 runProp v ma = runReaderT ma ("NO_NAME", v)
 
 getPropOrDefault :: (FromJSON a, MonadThrow m, MonadProp m) => a -> Text -> m a
-getPropOrDefault def key = fromMaybe def <$> getProp key
+getPropOrDefault d key = fromMaybe d <$> getProp key
 
 requiredProp :: (FromJSON a, MonadThrow m, MonadProp m) => Text -> m a
 requiredProp key = getProp key >>= maybe (throwM $ KeyNotFound key) return
@@ -62,19 +62,19 @@ requiredProp key = getProp key >>= maybe (throwM $ KeyNotFound key) return
 getProp :: (FromJSON a, MonadThrow m, MonadProp m) => Text -> m (Maybe a)
 getProp key  = propertySource >>= go key (splitKey key)
   where go :: (FromJSON a, Monad m, MonadThrow m) => Text -> [Text] -> PropertySource -> m (Maybe a)
-        go key hs (s,v) = to key s $ foldl' fetch (Just v) hs
+        go k hs (s,v) = to k s $ foldl' fetch (Just v) hs
         fetch :: Maybe Value -> Text -> Maybe Value
         fetch  Nothing      _ = Nothing
         fetch  (Just v)     h = fetch' v h
         fetch' Null         _ = Just Null
-        fetch' (Object map) h = case M.lookup h map of
+        fetch' (Object m) h = case M.lookup h m of
           Just v  -> Just v
           Nothing -> Just Null
-        fetch' v            h = Nothing
+        fetch' _          _ = Nothing
         to :: (FromJSON a, Monad m, MonadThrow m) => Text -> Text -> Maybe Value -> m (Maybe a)
-        to k s Nothing     = throwM $ TypeMismatch k
+        to k _ Nothing     = throwM $ TypeMismatch k
         to _ _ (Just Null) = return Nothing
-        to k s (Just v)    = case fromJSON v of
+        to k _ (Just v)    = case fromJSON v of
           Error   e -> throwM $ ParseFailed k $ cs e
           Success a -> return (Just a)
 splitKey :: Text -> [Text]
@@ -125,7 +125,7 @@ convertValue = toValue . mapMaybe go
 mergePropertySource :: [PropertySource] -> PropertySource
 mergePropertySource = foldl' merge emptyPropertySource
   where merge :: (Text, Value) -> (Text, Value) -> (Text, Value)
-        merge (n1,v1) (n2,v2)        = (n1, merge' v1 v2)
+        merge (n1,v1) (_,v2)        = (n1, merge' v1 v2)
         merge' Null    a             = a
         merge' (Object a) (Object b) = Object (M.unionWith merge' a b)
         merge' a       _             = a

@@ -27,6 +27,7 @@ module Yam.Import(
   , isNothing
   , isJust
   , finally
+  , bracket_
   , MonadMask
   , MonadThrow
   , MonadCatch
@@ -106,6 +107,7 @@ encodeToText = cs . encode
 showText :: Show a => a -> Text
 showText = cs . show
 
+_hex :: [Char]
 _hex = ['0'..'9'] <> ['a'..'f']
 
 randomHex :: Int -> IO Text

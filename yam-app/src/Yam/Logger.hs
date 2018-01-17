@@ -70,12 +70,12 @@ logL :: (MonadYamLogger m, HasCallStack) => forall msg . (ToLogStr msg) => LogRa
 logL = logL' callStack
 
 logL' :: MonadYamLogger m => forall msg . (ToLogStr msg) => CallStack -> LogRank -> msg -> m ()
-logL' callStack r msg = do
+logL' stack r msg = do
   conf    <- loggerConfig
   mayName <- fetchName
   liftIO $ when (r >= rank conf) $ do
     now      <- clock conf
-    logger conf (cs now) (getName (getCallStack callStack) `mergeMaybe` (cs <$> mayName)) r (toLogStr msg)
+    logger conf (cs now) (getName (getCallStack stack) `mergeMaybe` (cs <$> mayName)) r (toLogStr msg)
   where getName []          = Nothing
         getName ((_,loc):_) = Just $ (<>" ") $ cs $ srcLocModule loc
 
@@ -90,8 +90,8 @@ setName :: MonadYamLogger m => Maybe Text -> m ()
 setName m = do
   conf <- loggerConfig
   liftIO $ myThreadId >>= void . go m (name conf)
-  where go (Just m) cache tid = M.insert tid m cache
-        go _        cache tid = M.delete tid   cache
+  where go (Just nm) cache tid = M.insert tid nm cache
+        go _         cache tid = M.delete tid    cache
 
 logLn :: (MonadYamLogger m, HasCallStack) =>  LogRank -> Text -> m ()
 logLn = logLn' callStack
@@ -130,17 +130,17 @@ fileLogger file = newFileLoggerSet 4096 file >>= newLog
 newLog :: LoggerSet -> IO LoggerConfig
 newLog = defaultLoggerConfig . mkLogger . pushLogStr
   where mkLogger :: FastLogger -> LoggerFunc
-        mkLogger logger time mayName rank msg = do
+        mkLogger fl time mayName rk msg = do
           thread  <- myThreadId
-          let name = time
+          let pre  = time
                   <> " ["
                   <> showText thread
                   <> "] "
-                  <> showText rank
+                  <> showText rk
                   <> " "
                   <> fromMaybe "" mayName
                   <> " - "
-          logger $ toLogStr name <> msg
+          fl $ toLogStr pre <> msg
 
 withLoggerName :: (MonadYamLogger m, MonadMask m) => Text -> m a -> m a
 withLoggerName nm action = do
@@ -149,12 +149,6 @@ withLoggerName nm action = do
   bracket_ (setName mayName') (setName mayName) action
   where merge n (Just v) = v <> "." <> n
         merge n _        = n
-
-withLogger :: (MonadYamLogger m) => (LoggerConfig -> LoggerConfig) -> m a -> m a
-withLogger modify action = do
-  conf    <- loggerConfig
-  withLoggerConfig (modify conf) action
-
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
@@ -167,7 +161,7 @@ toMonadLogger = mkLogger <$> loggerConfig
          toRank _          = INFO
          mkLogger :: LoggerConfig -> LogFunc
          mkLogger context = let go :: HasCallStack => LogFunc
-                                go _ name level msg = runReaderT (withLoggerName name $ logL' callStack (toRank level) (msg <> "\n")) context
+                                go _ pre level msg = runReaderT (withLoggerName pre $ logL' callStack (toRank level) (msg <> "\n")) context
                             in go
 
 toWaiLogger :: (MonadYamLogger m) => m ApacheLogger

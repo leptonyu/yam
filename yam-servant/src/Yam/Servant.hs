@@ -11,7 +11,7 @@
 module Yam.Servant(
     App
   , ServantWrapException(..)
-  , API(..)
+  , API
   , MkApplication
   , ApiToApplication
   , emptyApi
@@ -53,7 +53,7 @@ import           Servant.Swagger
 import           Servant.Swagger.UI
 import           Servant.Utils.Enter
 
-type App = AppM Handler
+type App = AppM Servant.Handler
 
 data ServantWrapException = forall e. Exception e => Wrap ServantErr e
 
@@ -65,11 +65,11 @@ exceptionHandler ::(MonadIO m) => (Text -> m ())
                                -> (m ResponseReceived -> IO ResponseReceived)
                                -> SomeException
                                -> Application
-exceptionHandler log run e _ resH = run $ do
-  log    $ showText e
+exceptionHandler lg action e _ resH = action $ do
+  lg     $ showText e
   liftIO $ resH $ responseServantErr $ go e
   where go :: SomeException -> ServantErr
-        go e  = case fromException e :: Maybe ServantWrapException of
+        go e'  = case fromException e' :: Maybe ServantWrapException of
           Just (Wrap err _) -> err
           _                 -> err400
 
@@ -104,8 +104,8 @@ mkServe ps c req resH = do
   where go :: (HasServer api '[YamContext]) => API api -> YamContext -> Application
         go (p,s)    c = serveWithContext p (c :. EmptyContext) $ s c
 
-toAPI :: (Enter (ServerT api App) App Handler (Server api)) => ServerT api App -> API api
-toAPI api = let s c = runReaderTNat c :: ReaderT YamContext Handler :~> Handler
+toAPI :: (Enter (ServerT api App) App Servant.Handler (Server api)) => ServerT api App -> API api
+toAPI api = let s c = runReaderTNat c :: ReaderT YamContext Servant.Handler :~> Servant.Handler
             in (Proxy :: Proxy api, \c -> enter (s c) api)
 
 addApi :: (HasServer api '[YamContext], HasSwagger api, HasServer new '[YamContext], HasSwagger new)
@@ -134,9 +134,6 @@ swaggerDocument proxy = toSwagger proxy
                 & info.version     .~ "2018.1"
                 & info.contact     ?~ Contact (Just "Daniel YU") Nothing (Just "i@icymint.me")
                 & info.description ?~ "This is an API for Corn Project"
-
-applicationInfo :: HasServer api '[YamContext] => Proxy api -> YamContext -> Text
-applicationInfo proxy = layoutWithContext proxy . (:. EmptyContext)
 
 data Config = Config
   { port :: Int
@@ -195,7 +192,7 @@ startMain :: InitializeYamContext
           -> IO ()
 startMain initialize providers migrateSql jobs application = do
   context <- defaultContext >>= initialize
-  runAppM context $ go `finally` cleanContext killJobs
+  runAppM context $ go
   where go :: AppM IO ()
         go = do showConf
                 mds  <- getPropOrDefault def "datasource"
@@ -203,14 +200,15 @@ startMain initialize providers migrateSql jobs application = do
                 conf <- getPropOrDefault def ""
                 initDataSource providers mds ds2nd $ do
                   when (migrate mds && mode conf /= Production) migrateSql
-                  jobs >>= mapM_ registerJob
-                  lockExtenstion
-                  context <- ask
-                  logger  <- toWaiLogger
-                  let pt       = port (conf :: Config)
-                      settings = setPort pt
-                               $ setLogger logger defaultSettings
-                  liftIO  $ runSettings settings
-                          $ middleWare  context
-                          $ application context
+                  lockExtension
+                  jbs <- jobs
+                  withJobs jbs $ do
+                    context <- ask
+                    logger  <- toWaiLogger
+                    let pt       = port (conf :: Config)
+                        settings = setPort pt
+                                 $ setLogger logger defaultSettings
+                    liftIO $ runSettings settings
+                           $ middleWare  context
+                           $ application context
 

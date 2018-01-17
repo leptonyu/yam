@@ -91,8 +91,8 @@ initLogger = do
     Nothing   -> return context { defLogger = config {rank = logRank} }
 
 enable :: FromJSON a => Text -> Bool -> Text -> (Maybe a -> AppM IO ()) -> AppM IO ()
-enable keyEnable def key action = do
-        enables <- getPropOrDefault def keyEnable
+enable keyEnable d key action = do
+        enables <- getPropOrDefault d keyEnable
         when enables $ getProp key >>= action
 
 keyLogger :: Text
@@ -122,11 +122,10 @@ keySecondaryTransaction :: Text
 keySecondaryTransaction = "Extension.Transaction.Secondary"
 
 instance (MonadIO m, MonadBaseControl IO m, MonadMask m) => MonadTransaction (AppM m) where
-  connectionPool    = requireExtension keyTransaction
-  secondaryPool     = getExtension     keySecondaryTransaction
-  setConnectionPool p s = do
-    setExtension keyTransaction p
-    forM_ s (setExtension keySecondaryTransaction)
+  connectionPool         = requireExtension keyTransaction
+  secondaryPool          = getExtension     keySecondaryTransaction
+  withConnectionPool p s =           withExtension keyTransaction           p
+                         . maybe id (withExtension keySecondaryTransaction) s
 
 keyEvent :: Text
 keyEvent = "Extension.Event."
@@ -141,8 +140,8 @@ registerEventHandler' :: (MonadIO m, MonadThrow m, Event e) => Proxy e -> Maybe 
 registerEventHandler' p hname h = do
   hs      <- eventHandler p
   context <- ask
-  let key  = keyEvent <> cs (eventKey p)
-      h'   = runAppM context . h
-      name = fromMaybe (key <> "." <> showText (length hs + 1)) hname
-  infoLn $ "Register eventHandler " <> name <> " for " <> key
+  let key = keyEvent <> cs (eventKey p)
+      h'  = runAppM context . h
+      nm  = fromMaybe (key <> "." <> showText (length hs + 1)) hname
+  infoLn $ "Register eventHandler " <> nm <> " for " <> key
   setExtension key (h':hs)

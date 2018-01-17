@@ -23,8 +23,8 @@ thenNotify :: (Event e, MonadYamLogger m, MonadMask m, MonadEvent m) => m a -> e
 thenNotify ma e = do
   a <- ma
   let printStack :: (Event e, MonadYamLogger m) => e -> SomeException -> m ()
-      printStack e x = do
-          errorLn $ "Event "      <> encodeToText e <> " Failed!"
+      printStack event x = do
+          errorLn $ "Event "      <> encodeToText event <> " Failed!"
           errorLn $ "Exception: " <> showText x
   withLoggerName "Event" $ do
     infoLn  $ "Event " <> encodeToText e <> " Received!"

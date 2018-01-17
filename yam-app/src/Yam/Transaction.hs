@@ -8,7 +8,7 @@
 
 module Yam.Transaction(
     Transaction
-  , TransactionPool(..)
+  , TransactionPool
   , DataSource(..)
   , MonadTransaction(..)
   , DataSourceConnector
@@ -66,7 +66,7 @@ instance Default DataSource where
 
 class (MonadIO m, MonadBaseControl IO m, MonadYamLogger m) => MonadTransaction m where
   connectionPool :: m TransactionPool
-  setConnectionPool :: TransactionPool -> Maybe TransactionPool -> m ()
+  withConnectionPool :: TransactionPool -> Maybe TransactionPool -> m a -> m a
   secondaryPool  :: m (Maybe TransactionPool)
   secondaryPool = return Nothing
 
@@ -84,28 +84,26 @@ data DataSourceException = DataSourcePoolNotFound Text
 instance Exception DataSourceException
 
 initDataSource :: (MonadTransaction m, MonadMask m) => [DataSourceProvider m a] -> DataSource -> Maybe DataSource -> m a -> m a
-initDataSource maps ds ds2nd action = let map = M.fromList maps in go map ds ds2nd action
-  where go map ds ds2 action = do
-          logger <- toMonadLogger
-          getConnector map logger ds $ \p ->
+initDataSource maps ds1 ds2nd action = let m = M.fromList maps in go m ds1 ds2nd action
+  where go m' ds ds2 action' = do
+          lg <- toMonadLogger
+          getConnector m' lg ds $ \p ->
             case ds2 of
-              Nothing -> setConnectionPool p Nothing >> action
-              Just s2 -> getConnector map logger s2 $ \v -> setConnectionPool p (Just v) >> action
-        getConnector map logger ds = case M.lookup (dbtype ds) map of
+              Nothing -> withConnectionPool p Nothing action'
+              Just s2 -> getConnector m' lg s2 $ \v -> withConnectionPool p (Just v) action'
+        getConnector m2 l ds = case M.lookup (dbtype ds) m2 of
             Nothing -> \_ -> throwM $ DataSourceNotSupported $ cs $ dbtype ds
-            Just db -> db logger ds
+            Just db -> db l ds
 
 runTrans :: MonadTransaction m => Transaction a -> m a
-runTrans trans = connectionPool >>= executePool trans
-
-executePool trans p = liftIO (runSqlPool trans p)
+runTrans trans = connectionPool >>= liftIO . runSqlPool trans
 
 runSecondaryTrans :: (MonadTransaction m, MonadMask m) => Transaction a -> m a
 runSecondaryTrans trans = do
   pool <- secondaryPool
   case pool of
     Nothing -> throwM $ DataSourcePoolNotFound "Secondary Pool"
-    Just p  -> withLoggerName "Backup" $ executePool trans p
+    Just p  -> withLoggerName "Backup" $ liftIO $ runSqlPool trans p
 
 class FromPersistValue a where
   parsePersistValue :: [PersistValue] -> a

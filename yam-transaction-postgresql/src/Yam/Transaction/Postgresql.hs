@@ -12,7 +12,7 @@ import           Database.Persist.Postgresql
 data PostgreSQL
 
 instance HasDataSource PostgreSQL where
-  connector _ logger ds a = runLoggingT (withPostgresqlPool (cs $ conn ds) (thread ds) (lift.a)) logger
+  connector _ lg ds a = runLoggingT (withPostgresqlPool (cs $ conn ds) (thread ds) (lift.a)) lg
 
 
 postgresqlProvider :: (MonadTransaction m, MonadThrow m) => DataSourceProvider m a
