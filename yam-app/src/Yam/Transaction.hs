@@ -27,6 +27,7 @@ module Yam.Transaction(
 import           Yam.Import
 import           Yam.Logger
 
+import           Control.Monad.IO.Unlift
 import           Control.Monad.Trans.Control (MonadBaseControl)
 import           Data.Acquire                (with)
 import           Data.Aeson
@@ -74,7 +75,7 @@ type DataSourceConnector m a = LogFunc -> DataSource -> (TransactionPool -> m a)
 type DataSourceProvider  m a = (Text, DataSourceConnector m a)
 
 class HasDataSource ds where
-  connector :: (MonadTransaction m, MonadThrow m) => Proxy ds -> DataSourceConnector m a
+  connector :: (MonadTransaction m, MonadUnliftIO m) => Proxy ds -> DataSourceConnector m a
 
 data DataSourceException = DataSourcePoolNotFound Text
                          | DataSourceNotSupported Text

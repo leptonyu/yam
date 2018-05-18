@@ -14,13 +14,12 @@ module Yam.Servant(
   , API
   , MkApplication
   , ApiToApplication
-  , emptyApi
   , emptyApplication
   , mkServe
-  , toAPI
   , addApi
   , startSimpleJob
   , startMain
+  , start
   , InitializeYamContext
   , DataSourceProviders
   , MigrateSQL
@@ -48,10 +47,10 @@ import           Network.Wai
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.AddHeaders (addHeaders)
 import           Servant
+import           Servant.Server
 import           Servant.Server.Internal           (responseServantErr)
 import           Servant.Swagger
 import           Servant.Swagger.UI
-import           Servant.Utils.Enter
 
 type App = AppM Servant.Handler
 
@@ -88,25 +87,28 @@ type MkApplication = YamContext -> Application
 type ApiToApplication = forall s. (HasServer s '[YamContext], HasSwagger s) => API s -> MkApplication
 type SwaggerAPI = SwaggerSchemaUI "swagger-ui" "swagger.json"
 
-emptyApi :: API EmptyAPI
-emptyApi = (Proxy, undefined)
-
 emptyApplication :: MkApplication
-emptyApplication = mkServe emptyApi
+emptyApplication = mkServe (Proxy :: Proxy EmptyAPI) undefined
 
-mkServe :: (HasServer api '[YamContext], HasSwagger api) => API api -> YamContext -> Application
-mkServe ps c req resH = do
-  enabled   <- evalPropOrDefault True     c "swagger.enable"
-  swaggertp <- evalPropOrDefault Jensoleg c "swagger.type"
-  if enabled
-    then go (swagger swaggertp ps) c req resH
-    else go ps                     c req resH
-  where go :: (HasServer api '[YamContext]) => API api -> YamContext -> Application
-        go (p,s)    c = serveWithContext p (c :. EmptyContext) $ s c
+mkServe :: (HasServer api '[YamContext], HasSwagger api) => Proxy api -> ServerT api App -> MkApplication
+mkServe p api = mkServe' (toAPI p api)
+  where
+    mkServe' :: (HasServer api '[YamContext], HasSwagger api) => API api -> MkApplication
+    mkServe' ps c req resH = do
+      enabled   <- evalPropOrDefault True     c "swagger.enable"
+      swaggertp <- evalPropOrDefault Jensoleg c "swagger.type"
+      if enabled
+        then go (swagger swaggertp ps) c req resH
+        else go ps                     c req resH
+      where go :: (HasServer api '[YamContext]) => API api -> YamContext -> Application
+            go (p,s)    c = serveWithContext p (c :. EmptyContext) $ s c
 
-toAPI :: (Enter (ServerT api App) App Servant.Handler (Server api)) => ServerT api App -> API api
-toAPI api = let s c = runReaderTNat c :: ReaderT YamContext Servant.Handler :~> Servant.Handler
-            in (Proxy :: Proxy api, \c -> enter (s c) api)
+    toAPI' :: (HasServer api '[YamContext]) => YamContext -> Proxy api -> ServerT api App -> Server api
+    toAPI' c p = hoistServerWithContext p (Proxy :: Proxy '[YamContext]) (runAppM c :: App a -> Servant.Handler a)
+
+    toAPI :: (HasServer api '[YamContext]) => Proxy api -> ServerT api App -> API api
+    toAPI p api = (p, \c -> toAPI' c p api)
+
 
 addApi :: (HasServer api '[YamContext], HasSwagger api, HasServer new '[YamContext], HasSwagger new)
        => API api -> Bool -> API new -> ApiToApplication -> MkApplication
@@ -133,7 +135,7 @@ swaggerDocument proxy = toSwagger proxy
                 & info.title       .~ "Yam Servant API"
                 & info.version     .~ "2018.1"
                 & info.contact     ?~ Contact (Just "Daniel YU") Nothing (Just "i@icymint.me")
-                & info.description ?~ "This is an API for Corn Project"
+                & info.description ?~ "This is an API for Yam Project"
 
 data Config = Config
   { port :: Int
@@ -183,6 +185,9 @@ showConf = do
   unless (swagger && mode conf /= Production) $
     infoLn  $ "  SwaggerURL  : "        <> url <> "/swagger-ui"
   infoLn    $ T.replicate (T.length title) "-"
+
+start :: MkApplication -> IO ()
+start = startMain return [sqliteProvider] (return ()) (return [])
 
 startMain :: InitializeYamContext
           -> DataSourceProviders

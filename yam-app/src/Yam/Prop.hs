@@ -22,6 +22,7 @@ import           Yam.Import
 
 import           Data.Aeson          (Result (..), fromJSON)
 import           Data.Aeson.Types
+import           Data.Either         (either)
 import qualified Data.HashMap.Strict as M
 import           Data.List           (foldl')
 import qualified Data.Text           as T
@@ -88,7 +89,7 @@ tryLoadYaml file = do
     then do
       size <- liftIO $ getFileSize file
       if size > 0 then
-        Just . (cs file,) <$> (liftIO (decodeFile file) >>= maybe (throwM $ FileLoadFailed file) return)
+        Just . (cs file,) <$> (liftIO (decodeFileEither file) >>= either (\_ -> throwM $ FileLoadFailed file) return)
       else return Nothing
     else return Nothing
 
