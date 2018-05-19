@@ -1,5 +1,5 @@
 name:                yam-job
-version:             0.1.13
+version:             0.2.0
 description:         Job Module for Yam
 homepage:            https://github.com/leptonyu/yam/tree/master/yam-job#readme
 license:             BSD3
