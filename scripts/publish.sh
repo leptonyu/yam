@@ -21,6 +21,13 @@ if [ -z "$HACKAGE_USER" -o -z "$HACKAGE_PASS" ]; then
   exit 1
 fi
 
+update=`git diff-index --name-status HEAD | wc -l`
+
+if [ "$update" -gt 0 ]; then
+  echo "git has uncommitted modifications"
+  exit 1
+fi
+
 stack haddock
 
 ls | grep yam- | while read pkg; do
