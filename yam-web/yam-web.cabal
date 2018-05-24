@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6a0b8a7276444b04cb67574935e8650c2ca13732ad911756d76af7200429f353
+-- hash: 232ef047de40bce6e2a5b665aca113013b350ec81cc63e07ee86de7e6a548e1a
 
 name:           yam-web
-version:        0.3.0
+version:        0.3.2
 synopsis:       Yam Web
 description:    base web module for yam
 category:       Project
@@ -29,6 +29,7 @@ library
       Yam.Web.Swagger
       Yam.Web.Internal
       Yam.Web.Middleware
+      Yam.Web.Demo
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
@@ -51,5 +52,6 @@ library
     , wai
     , wai-extra
     , warp
+    , yam-config
     , yam-logger
   default-language: Haskell2010

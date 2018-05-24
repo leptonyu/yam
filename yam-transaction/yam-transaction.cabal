@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e4ca05165e61fba8244e0de1ff8545778e51dc047824a8acde49d08c17ffcd87
+-- hash: 1465d2452541ce416e580c21cd2e1015cacda43f83a45b1f5918b7214c1ebb6d
 
 name:           yam-transaction
-version:        0.3.0
+version:        0.3.2
 synopsis:       Yam transaction
 description:    transaction module for yam
 category:       Project

@@ -1,5 +1,5 @@
 name: yam-web
-version: 0.3.1
+version: 0.3.2
 synopsis: Yam Web
 description: base web module for yam
 maintainer: Daniel YU <leptonyu@gmail.com>
@@ -11,6 +11,7 @@ extra-source-files: README.md
 dependencies:
   - base >= 4.7 && < 5
   - yam-logger
+  - yam-config
   - wai
   - wai-extra
   - warp
@@ -41,3 +42,4 @@ library:
     - Yam.Web.Swagger
     - Yam.Web.Internal
     - Yam.Web.Middleware
+    - Yam.Web.Demo

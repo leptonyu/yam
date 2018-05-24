@@ -3,8 +3,6 @@
 module Yam.Web.Swagger(
     SwaggerConfig(..)
   , mkServeWithSwagger
-  , YamSettings(..)
-  , defaultYamSettings
   ) where
 
 import           Control.Lens       hiding (Context)
@@ -23,7 +21,6 @@ import           Servant.Swagger
 import           Servant.Swagger.UI
 
 import           Yam.Web.Internal
-import           Yam.Web.Middleware
 
 data SwaggerUIType = Classic | Jensoleg deriving Show
 data SwaggerConfig = SwaggerConfig
@@ -45,14 +42,14 @@ instance FromJSON SwaggerUIType where
 
 instance FromJSON SwaggerConfig where
   parseJSON (Object v) = SwaggerConfig
-    <$> v .:? "ui-type"       .!= Classic
-    <*> v .:? "ui-path"       .!= "swagger-ui.html"
-    <*> v .:? "api-path"      .!= "swagger.json"
-    <*> v .:? "enabled"       .!= True
-    <*> v .:? "api-title"     .!= ""
-    <*> v .:? "api-version"   .!= "1.0.0"
-    <*> v .:? "contract-name"
-    <*> v .:? "contract-email"
+    <$> v .:? "type"    .!= Classic
+    <*> v .:? "path"    .!= "swagger-ui.html"
+    <*> v .:? "schema"  .!= "swagger.json"
+    <*> v .:? "enabled" .!= True
+    <*> v .:? "title"   .!= ""
+    <*> v .:? "version" .!= "1.0.0"
+    <*> v .:? "name"
+    <*> v .:? "email"
   parseJSON invalid    = typeMismatch "SwaggerConfig" invalid
 
 instance Default SwaggerConfig where
@@ -67,8 +64,8 @@ swagger conf _ proxy api = go (uiType conf) (f conf $ toSwagger proxy) :<|> api
                 & info.version     .~ apiVersion
                 & info.contact     ?~ Contact contractName Nothing contractEmail
 
-mkServeWithSwagger' :: (HasSwagger api, API api) => Vault -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api App -> Application
-mkServeWithSwagger' vault middlewares conf proxy server =
+mkServeWithSwagger :: (HasSwagger api, API api) => Vault -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api App -> Application
+mkServeWithSwagger vault middlewares conf proxy server =
   if enabled conf
     then reifyGroup conf $ \p -> mkServe' (\(p0,s0) -> (p,swagger conf p p0 s0)) vault middlewares proxy server
     else mkServe' id vault middlewares proxy server
@@ -78,17 +75,3 @@ reifyGroup SwaggerConfig{..} f = reifySymbol uiPath $ \pd -> reifySymbol apiPath
 
 group :: Proxy dir -> Proxy schema -> Proxy (SwaggerSchemaUI dir schema :<|> api)
 group _ _ = Proxy
-
-data YamSettings = YamSettings
-  { vault       :: Vault
-  , middlewares :: [Middleware]
-  , swaggers    :: SwaggerConfig
-  }
-
-defaultYamSettings :: IO YamSettings
-defaultYamSettings = do
-  lm <- stdLoggerMiddleware
-  return $ YamSettings empty [lm] def
-
-mkServeWithSwagger :: (HasSwagger api, API api) => YamSettings -> Proxy api -> ServerT api App -> Application
-mkServeWithSwagger YamSettings{..} = mkServeWithSwagger' vault middlewares swaggers

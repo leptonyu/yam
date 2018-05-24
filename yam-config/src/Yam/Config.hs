@@ -4,6 +4,7 @@ module Yam.Config(
   , defaultConfig
   ) where
 
+import           Control.Exception       (catch, throw)
 import           Data.Aeson
 import           Data.Foldable           (foldl')
 import qualified Data.HashMap.Strict     as H
@@ -14,10 +15,15 @@ import qualified Data.Text               as T
 import           Data.Yaml
 import           System.Environment
 
+type Required = Bool
+
 class Config c where
   fetch   :: Text -> c -> Either String c
   merge   :: [c] -> c
   from    ::  (String, String)  -> c
+  merge'  :: [IO c] -> IO c
+  merge' c' = merge <$> sequence c'
+  fromFile :: FilePath -> Required -> IO c
   fromEnv :: [(String, String)] -> c
   fromEnv = merge . fmap from
   fromCommandLine :: [String]   -> c
@@ -25,7 +31,7 @@ class Config c where
     where
       select (k, '=':vs) = (k,vs)
       select v           = v
-  {-# MINIMAL fetch,merge,from #-}
+  {-# MINIMAL fetch,merge,from,fromFile #-}
 
 keys :: Text -> Text -> [Text]
 keys sep = dropWhile T.null . splitOn sep
@@ -44,11 +50,16 @@ instance Config Value where
         Nothing -> Left $ "Key " <> T.unpack k' <> " Not Found"
         Just v  -> go k' ks v
       go k' _              _  = Left $ "Key " <> T.unpack k' <> " Not Match"
-  merge = foldl' merge' Null
+  merge = foldl' merge2 Null
     where
-      merge' Null    a             = a
-      merge' (Object a) (Object b) = Object (H.unionWith merge' a b)
-      merge' a       _             = a
+      merge2 Null    a             = a
+      merge2 (Object a) (Object b) = Object (H.unionWith merge2 a b)
+      merge2 a       _             = a
+  fromFile f required = (decodeFileEither f >>= either throw return) `catch` go required
+    where
+      go :: Required -> ParseException -> IO Value
+      go False (InvalidYaml (Just (YamlException _))) = return Null
+      go _     e                                      = throw e
   from (k,v) = case Data.Yaml.decode $ cs v of
     Nothing -> Null
     Just a  -> go' (keys "_" $ T.toLower $ T.pack k) a

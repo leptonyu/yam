@@ -28,9 +28,6 @@ sql
 *-exe
 pgdata
 report.html
-corn.yml
-corn2.yml
-corn-alert
-yam.yaml
+app.yaml
 
 # End of https://www.gitignore.io/api/haskell

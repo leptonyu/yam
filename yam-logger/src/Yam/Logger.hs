@@ -15,6 +15,7 @@ module Yam.Logger(
   , infoLn
   , warnLn
   , errorLn
+  , toLogStr
   ) where
 
 import           Control.Monad           (when)

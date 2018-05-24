@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1317aedb85a26cf3517a174461424b08991c72fd6574b9c18ed184e30392ad60
+-- hash: f8fcc1a85fbb33d8862092d62b61a5bbaffe435350021fad7edd63acd9e98ff5
 
 name:           yam-config
-version:        0.3.0
+version:        0.3.2
 synopsis:       Yam Configuation
 description:    Configuation Loader Module for yam
 category:       Project

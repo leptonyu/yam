@@ -28,13 +28,13 @@ runAppM = flip runReaderT
 
 type API' api = (Proxy api, Server api)
 
-mkServe' :: (API api, API api') => (API' api -> API' api') ->  Vault -> [Middleware] -> Proxy api -> ServerT api App -> Application
+mkServe' :: (API api, API api') => (API' api -> API' api') -> Vault -> [Middleware] -> Proxy api -> ServerT api App -> Application
 mkServe' f vault middlewares proxy server =
   let server' = hoistServerWithContext proxy (Proxy :: Proxy '[Vault]) (runAppM vault :: App a -> Handler a) server
       (p,s)   = f (proxy, server')
       app     = serveWithContext p (vault :. EmptyContext) s
       m       = prepareMiddleware (return . union vault)
-  in foldr' ($) app $ m:servantErrorMiddleware:middlewares
+  in foldr' ($) app $ m:middlewares
 
 mkServe :: API api => Vault -> [Middleware] -> Proxy api -> ServerT api App -> Application
 mkServe = mkServe' id

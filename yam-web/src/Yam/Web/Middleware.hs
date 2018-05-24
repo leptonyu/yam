@@ -5,7 +5,7 @@ import           Yam.Logger
 import           Control.Exception
     ( SomeException
     , catch
-    , throw
+    , fromException
     )
 import           Data.Default
 import           Data.String.Conversions              (cs)
@@ -13,6 +13,7 @@ import           Data.Vault.Lazy
 import           Network.Wai
 import           Network.Wai.Middleware.RequestLogger
 import           Servant.Server
+import           Servant.Server.Internal.ServantErr   (responseServantErr)
 
 prepareMiddleware :: (Vault -> IO Vault) -> Middleware
 prepareMiddleware pre app req resH = do
@@ -28,5 +29,9 @@ loggerMiddleware lc@LoggerConfig{..} = mkRequestLogger def {destination=Callback
 stdLoggerMiddleware :: IO Middleware
 stdLoggerMiddleware = stdoutLoggerConfig >>= loggerMiddleware
 
-servantErrorMiddleware :: Middleware
-servantErrorMiddleware = errorMiddleware $ \_ e -> throw err400 { errBody = cs $ show e}
+servantErrorMiddleware :: LoggerConfig -> Middleware
+servantErrorMiddleware lc = errorMiddleware $ \_ e -> do
+  errorLn lc (cs $ show e)
+  return . responseServantErr $ case fromException e :: Maybe ServantErr of
+    Nothing  -> err400 { errBody = cs $ show e }
+    Just err -> err
