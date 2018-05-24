@@ -10,6 +10,10 @@ extra-source-files: README.md
 
 dependencies:
   - base >= 4.7 && < 5
+  - yam-logger
+  - monad-logger
+  - mtl
+  - transformers
   - persistent
   - persistent-sqlite
   - persistent-postgresql
@@ -20,6 +24,7 @@ dependencies:
   - conduit
   - resourcet
   - unliftio-core
+  - string-conversions
 
 defaults:
   github: leptonyu/hpack-template

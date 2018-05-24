@@ -4,7 +4,3 @@ packages:
 - yam-logger
 - yam-transaction
 - yam-web
-# - yam-app
-# - yam-job
-# - yam-servant
-# - yam-transaction-postgresql
