@@ -22,6 +22,6 @@ if echo "$1" | grep -vq '[0-9][0-9]*\(\.[0-9][0-9]*\)*' ; then
 fi
 
 ls | grep yam- | while read pkg; do
-  sed -i.bak "s|version:\(  *\)[0-9][0-9]*\(\.[0-9][0-9]*\)*|version:\1$1|" $pkg/$pkg.cabal
-  rm -f $pkg/$pkg.cabal.bak
+  sed -i.bak "s|version:\(  *\)[0-9][0-9]*\(\.[0-9][0-9]*\)*|version:\1$1|" $pkg/package.yaml
+  rm -f $pkg/package.yaml.bak
 done

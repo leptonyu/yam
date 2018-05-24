@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d15cc9bf9d7ccbadc13a7dccd30b471542854ac6ffcbc74ae1953e8d3a7b8068
+-- hash: 6a0b8a7276444b04cb67574935e8650c2ca13732ad911756d76af7200429f353
 
 name:           yam-web
 version:        0.3.0
@@ -24,12 +24,11 @@ source-repository head
 
 library
   exposed-modules:
+      Yam.Web
+  other-modules:
       Yam.Web.Swagger
       Yam.Web.Internal
       Yam.Web.Middleware
-  other-modules:
-      Yam.Web
-      Paths_yam_web
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
