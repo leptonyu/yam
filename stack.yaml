@@ -1,6 +1,10 @@
-resolver: lts-11.9
+resolver: lts-11.10
 packages:
-- yam-app
-- yam-job
-- yam-servant
-- yam-transaction-postgresql
+- yam-config
+- yam-logger
+- yam-transaction
+- yam-web
+# - yam-app
+# - yam-job
+# - yam-servant
+# - yam-transaction-postgresql

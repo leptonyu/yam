@@ -1,0 +1,43 @@
+name: yam-web
+version: 0.3.0
+synopsis: Yam Web
+description: base web module for yam
+maintainer: Daniel YU <leptonyu@gmail.com>
+license: MIT
+github: leptonyu/yam
+category: Project
+extra-source-files: README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - yam-logger
+  - wai
+  - wai-extra
+  - warp
+  - vault
+  - servant-server
+  - servant-swagger
+  - servant-swagger-ui
+  - swagger2
+  - transformers
+  - reflection
+  - aeson
+  - text
+  - lens
+  - mtl
+  - data-default
+  - string-conversions
+
+defaults:
+  github: leptonyu/hpack-template
+  ref: master
+  path: defaults.yaml
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Yam.Web
+  exposed-modules:
+    - Yam.Web.Swagger
+    - Yam.Web.Internal
+    - Yam.Web.Middleware

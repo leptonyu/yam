@@ -1,0 +1,34 @@
+name: yam-transaction
+version: 0.3.0
+synopsis: Yam transaction
+description: transaction module for yam
+maintainer: Daniel YU <leptonyu@gmail.com>
+license: MIT
+github: leptonyu/yam
+category: Project
+extra-source-files: README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - persistent
+  - persistent-sqlite
+  - persistent-postgresql
+  - data-default
+  - aeson
+  - text
+  - time
+  - conduit
+  - resourcet
+  - unliftio-core
+
+defaults:
+  github: leptonyu/hpack-template
+  ref: master
+  path: defaults.yaml
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Yam.Transaction
+    - Yam.Transaction.Sqlite
+    - Yam.Transaction.Postgresql
