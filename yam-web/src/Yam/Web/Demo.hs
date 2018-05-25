@@ -22,6 +22,6 @@ servantService = throw err401
 
 runDemo :: IO ()
 runDemo = do
-  ys <- defaultYamSettings
+  ys<- defaultYamSettings
   infoLn (loggers ys) (pack $ show ys)
   runServer ys (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService)

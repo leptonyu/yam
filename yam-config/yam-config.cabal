@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f8fcc1a85fbb33d8862092d62b61a5bbaffe435350021fad7edd63acd9e98ff5
+-- hash: 07e61434203150694307355b1fbe2416b9fc6dd94222ad72f329a68d1e444767
 
 name:           yam-config
 version:        0.3.2
@@ -25,6 +25,7 @@ source-repository head
 library
   exposed-modules:
       Yam.Config
+      Yam.Config.Vault
   other-modules:
       Paths_yam_config
   hs-source-dirs:
@@ -34,8 +35,11 @@ library
   build-depends:
       aeson
     , base >=4.7 && <5
+    , data-default
+    , random
     , string-conversions
     , text
     , unordered-containers
+    , vault
     , yaml
   default-language: Haskell2010

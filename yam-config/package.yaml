@@ -15,6 +15,9 @@ dependencies:
   - text
   - string-conversions
   - unordered-containers
+  - vault
+  - random
+  - data-default
 
 defaults:
   github: leptonyu/hpack-template
@@ -25,3 +28,4 @@ library:
   source-dirs: src
   exposed-modules:
     - Yam.Config
+    - Yam.Config.Vault

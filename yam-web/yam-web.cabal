@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 232ef047de40bce6e2a5b665aca113013b350ec81cc63e07ee86de7e6a548e1a
+-- hash: dec6bcccd3d9ec74b394f7cfd7d9f5a1ed8de60ce3ee20bf4f4725a01c9c301e
 
 name:           yam-web
 version:        0.3.2
@@ -40,6 +40,7 @@ library
     , data-default
     , lens
     , mtl
+    , random
     , reflection
     , servant-server
     , servant-swagger

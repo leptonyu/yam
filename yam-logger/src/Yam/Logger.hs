@@ -5,8 +5,8 @@ module Yam.Logger(
   , LogFunc
   , defaultLoggerConfig
   , stdoutLoggerConfig
-  , toApacheLogger
   , toMonadLogger
+  , addVaultToLoggerConfig
   , logger
   , logL
   , logLn
@@ -18,14 +18,16 @@ module Yam.Logger(
   , toLogStr
   ) where
 
+import           Yam.Config.Vault
+
 import           Control.Monad           (when)
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Control.Monad.Logger
 import           Data.Aeson
-import           Data.Monoid             ((<>))
+import           Data.Monoid
 import           Data.String.Conversions (cs)
-import           Data.Text               (Text, intercalate, pack)
-import           Network.Wai.Logger
+import           Data.Text               (Text, pack)
+import           Data.Vault.Lazy
 import           System.Log.FastLogger
 
 data LogRank
@@ -50,16 +52,20 @@ type Logger = LogStr -> IO ()
 type Clock  = IO FormattedTime
 
 data LoggerConfig = LoggerConfig
-  { func  :: Logger
-  , clock :: Clock
-  , names :: [Text]
-  , rank  :: LogRank
+  { func     :: Logger
+  , clock    :: Clock
+  , logKey   :: Key Text
+  , traceKey :: Key Text
+  , rank     :: LogRank
+  , logVault :: Vault
   }
 
 defaultLoggerConfig :: IO LoggerConfig
 defaultLoggerConfig = do
   c <- newTimeCache "%F %X"
-  return $ LoggerConfig (\_ -> return ()) c [] INFO
+  k <- newKey
+  t <- newKey
+  return $ LoggerConfig (\_ -> return ()) c k t INFO empty
 
 stdoutLoggerConfig :: IO LoggerConfig
 stdoutLoggerConfig = do
@@ -67,13 +73,13 @@ stdoutLoggerConfig = do
   ls <- newStdoutLoggerSet 4096
   return lc { func = pushLogStr ls }
 
-logger :: LoggerConfig -> LogRank -> Logger
-logger LoggerConfig{..} r str = when (r >= rank) $ do
+logger :: LoggerConfig -> Vault -> LogRank -> Logger
+logger LoggerConfig{..} v r str = when (r >= rank) $ do
   now <- clock
-  func $ toLogStr (cs now <> " [" <> pack (show r) <> "] - " <> intercalate "." names <> " - ") <> str
-
-toApacheLogger :: LoggerConfig -> IO ApacheLoggerActions
-toApacheLogger lc@LoggerConfig{..} = initLogger FromFallback (LogCallback (logger lc INFO) (return ())) clock
+  let v' = union v logVault
+      nm = extracBoxOrDefault "" $ newBox logKey v'
+      ti = "[" <> extracBoxOrDefault "" (newBox traceKey v') <> "]"
+  func $ toLogStr (cs now <> " [" <> pack (show r) <> "] - " <> ti <> " " <> nm <> " - ") <> str
 
 toRank :: LogLevel -> LogRank
 toRank LevelDebug = DEBUG
@@ -85,10 +91,13 @@ toRank _          = INFO
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
 toMonadLogger :: LoggerConfig -> LogFunc
-toMonadLogger lc@LoggerConfig{..} _ ls level str = logger lc {names=ls:names} (toRank level) str
+toMonadLogger lc@LoggerConfig{..} _ ls level = logger lc {logVault = addFirstVault ls "." logKey logVault} empty (toRank level)
+
+addVaultToLoggerConfig :: Vault -> LoggerConfig -> LoggerConfig
+addVaultToLoggerConfig vault lc = lc {logVault = union vault $ logVault lc}
 
 logL :: forall msg . (ToLogStr msg) => LoggerConfig -> LogRank -> msg -> IO ()
-logL lc rank = logger lc rank . toLogStr
+logL lc rank = logger lc empty rank . toLogStr
 
 logLn :: LoggerConfig -> LogRank -> Text -> IO ()
 logLn lc rank msg = logL lc rank $ msg <> "\n"

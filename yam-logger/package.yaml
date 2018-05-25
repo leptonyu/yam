@@ -10,12 +10,13 @@ extra-source-files: README.md
 
 dependencies:
   - base >= 4.7 && < 5
+  - yam-config
   - fast-logger
   - monad-logger
-  - wai-logger
   - aeson
   - text
   - string-conversions
+  - vault
 
 defaults:
   github: leptonyu/hpack-template

@@ -9,6 +9,7 @@ import           Control.Lens       hiding (Context)
 import           Data.Aeson
 import           Data.Aeson.Types   (typeMismatch)
 import           Data.Default
+import           Data.Dynamic
 import           Data.Maybe
 import           Data.Reflection
 import           Data.Swagger
@@ -64,11 +65,11 @@ swagger conf _ proxy api = go (uiType conf) (f conf $ toSwagger proxy) :<|> api
                 & info.version     .~ apiVersion
                 & info.contact     ?~ Contact contractName Nothing contractEmail
 
-mkServeWithSwagger :: (HasSwagger api, API api) => Vault -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api App -> Application
-mkServeWithSwagger vault middlewares conf proxy server =
+mkServeWithSwagger :: (Typeable a, HasSwagger api, API a api) => Vault -> Proxy a -> a -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api App -> Application
+mkServeWithSwagger vault pa ka middlewares conf proxy server =
   if enabled conf
-    then reifyGroup conf $ \p -> mkServe' (\(p0,s0) -> (p,swagger conf p p0 s0)) vault middlewares proxy server
-    else mkServe' id vault middlewares proxy server
+    then reifyGroup conf $ \p -> mkServe' (\(p0,s0) -> (p,swagger conf p p0 s0)) vault pa ka middlewares proxy server
+    else mkServe' id vault pa ka middlewares proxy server
 
 reifyGroup :: SwaggerConfig -> (forall d s. (KnownSymbol d ,KnownSymbol s)=> Proxy (SwaggerSchemaUI d s :<|> api) -> r) -> r
 reifyGroup SwaggerConfig{..} f = reifySymbol uiPath $ \pd -> reifySymbol apiPath $ \ps -> f $ group pd ps

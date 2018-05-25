@@ -14,27 +14,32 @@ module Yam.Web.Internal(
 import           Yam.Web.Middleware
 
 import           Control.Monad.Trans.Reader (ReaderT (..), runReaderT)
+import           Data.Dynamic
 import           Data.Foldable              (foldr')
 import           Data.Vault.Lazy
 import           Network.Wai
 import           Servant
 
-type API api = HasServer api '[Vault]
-type AppM = ReaderT Vault
+type API c api = HasServer api '[Vault, c]
+type AppM = ReaderT (Vault, Dynamic)
 type App  = AppM Handler
 
-runAppM :: Vault -> AppM m a -> m a
-runAppM = flip runReaderT
+runAppM :: Vault -> Dynamic -> AppM m a -> m a
+runAppM v c ama = runReaderT ama (v, c)
 
 type API' api = (Proxy api, Server api)
 
-mkServe' :: (API api, API api') => (API' api -> API' api') -> Vault -> [Middleware] -> Proxy api -> ServerT api App -> Application
-mkServe' f vault middlewares proxy server =
-  let server' = hoistServerWithContext proxy (Proxy :: Proxy '[Vault]) (runAppM vault :: App a -> Handler a) server
+mkServe' :: (Typeable c, API c api, API c api') => (API' api -> API' api') -> Vault -> Proxy c -> c -> [Middleware] -> Proxy api -> ServerT api App -> Application
+mkServe' f vault pa ka middlewares proxy server =
+  let cxt     = toDyn ka
+      server' = hoistServerWithContext proxy (fromPa pa) (runAppM vault cxt :: App m -> Handler m) server
       (p,s)   = f (proxy, server')
-      app     = serveWithContext p (vault :. EmptyContext) s
+      app     = serveWithContext p (vault :. ka :. EmptyContext) s
       m       = prepareMiddleware (return . union vault)
   in foldr' ($) app $ m:middlewares
+  where
+    fromPa :: Proxy a -> Proxy '[Vault, a]
+    fromPa _ = Proxy
 
-mkServe :: API api => Vault -> [Middleware] -> Proxy api -> ServerT api App -> Application
+mkServe :: (Typeable a, API a api) => Vault -> Proxy a -> a -> [Middleware] -> Proxy api -> ServerT api App -> Application
 mkServe = mkServe' id

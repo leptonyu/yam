@@ -28,6 +28,7 @@ dependencies:
   - mtl
   - data-default
   - string-conversions
+  - random
 
 defaults:
   github: leptonyu/hpack-template
