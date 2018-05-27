@@ -1,15 +1,18 @@
 module Main where
 
 import           Yam.Logger
+import           Yam.Transaction
 import           Yam.Web
 
 import           Control.Exception (throw)
-import           Data.Text         (Text)
+import           Data.Text         (Text, pack)
 import           Servant
 
-type UserApi = "users" :> Get '[JSON] Text
+type UserApi
+     = "users" :> Get '[JSON] Text
   :<|> "users" :> "error" :> Get '[JSON] Text
   :<|> "users" :> "servant" :> Get '[JSON] Text
+  :<|> "users" :> "db" :> Get '[JSON] Text
 
 userService :: Yam Text
 userService = do
@@ -23,8 +26,18 @@ errorService = error "No"
 servantService :: Yam Text
 servantService = throw err401
 
+dbService :: Yam Text
+dbService = do
+  str <- runDb $ do
+    time <- selectNow
+    let timeStr = pack $ show time
+    warnLn timeStr
+    return timeStr
+  infoLn str
+  return str
+
 main :: IO ()
 main = do
   ys <- defaultYamSettings
   logger (loggers ys) INFO (toLogStr (show ys) <> "\n")
-  runServer ys (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService)
+  runServer ys (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService :<|> dbService)

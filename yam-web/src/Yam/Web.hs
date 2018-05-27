@@ -7,6 +7,7 @@ module Yam.Web(
   , YamSettings(..)
   , Yam
   , defaultYamSettings
+  , runDb
   , runServer
   ) where
 
@@ -19,6 +20,9 @@ import           Yam.Web.Internal
 import           Yam.Web.Middleware
 import           Yam.Web.Swagger
 
+import           Control.Exception          (throw)
+import           Control.Monad.IO.Unlift
+import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Aeson
 import           Data.Default
 import           Data.Monoid                ((<>))
@@ -42,6 +46,7 @@ instance Show YamSettings where
     <> "\n  port="      <> show port
     <> "\n  swagger="   <> show swaggers
     <> "\n  swagger-url=http://localhost:" <> show port <> "/" <> uiPath swaggers
+    <> "\n  datasource=" <> show dataSources
 
 defaultYamSettings :: IO YamSettings
 defaultYamSettings = do
@@ -68,8 +73,23 @@ instance LoggerMonad Yam where
     (req,YamSettings{..}) <- ask
     return loggers {logVault = vault req}
 
+instance MonadUnliftIO Handler where
+  askUnliftIO = return $ UnliftIO go
+    where
+      go (Handler rh) = do
+        result <- runExceptT rh
+        case result of
+          Left  e -> throw e
+          Right r -> return r
+
+runDb :: Transaction Yam a -> Yam a
+runDb r = do
+  (_,YamSettings{..}) <- ask
+  case dataSources of
+    Nothing -> error $ "Datasource disabled"
+    Just ds -> runTrans ds r
+
 runServer :: (HasSwagger api, HasServer api '[YamSettings]) => YamSettings -> Proxy api -> ServerT api Yam -> IO ()
 runServer ys@YamSettings{..} p a = run port $ mkServeWithSwagger p Proxy (ys :. EmptyContext) Proxy ys middlewares swaggers a
-
 
 

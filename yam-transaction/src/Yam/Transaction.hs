@@ -14,7 +14,6 @@ module Yam.Transaction(
 
 import           Yam.Logger
 
-import           Control.Monad.IO.Class     (MonadIO)
 import           Control.Monad.IO.Unlift    (MonadUnliftIO, withRunInIO)
 import           Control.Monad.Logger
 import           Control.Monad.Trans.Class  (lift)
@@ -31,7 +30,6 @@ import           Data.Monoid                ((<>))
 import           Data.Pool                  (withResource)
 import           Data.Text                  (Text, intercalate, unpack)
 import           Data.Time                  (UTCTime)
-import           Data.Vault.Lazy
 import           Database.Persist.Sql
 
 -- SqlPersistT ~ ReaderT SqlBackend
@@ -67,22 +65,26 @@ data DataSourceProvider = DataSourceProvider
   , createConnectionPool :: DataSourceConfig -> LoggingT IO ConnectionPool
   }
 
-newtype DataSource = DataSource (DataSourceProvider, DataSourceConfig , LoggerConfig, ConnectionPool)
+newtype DataSource = DataSource (DataSourceProvider, DataSourceConfig , ConnectionPool)
 
 instance Show DataSource where
-  show (DataSource (_,dsc,_,_)) = show dsc
+  show (DataSource (_,dsc,_)) = show dsc
 
 dataSource :: LoggerConfig -> DataSourceConfig -> [DataSourceProvider] -> IO DataSource
 dataSource lc dsc@DataSourceConfig{..} ps = do
   logger lc INFO $ "Initialize database " <> toLogStr dstype <> "\n"
   case Prelude.lookup dstype $ fmap (\p->(datasource p,p)) ps of
     Nothing -> error $ "DataSource Type " <> unpack dstype <> " Not Supported"
-    Just v  -> (\d -> DataSource (v,dsc,lc,d)) <$> runLoggingT (createConnectionPool v dsc) (toMonadLogger lc)
+    Just v  -> (\d -> DataSource (v,dsc,d)) <$> runLoggingT (createConnectionPool v dsc) (fixLn $ toMonadLogger lc)
 
-runTrans :: MonadUnliftIO m => Vault -> DataSource -> Transaction m a -> m a
-runTrans vault ds trans = flip runReaderT ds $ do
-  DataSource (_,_,lc,pool) <- ask
-  withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn trans c {connLogFunc = toMonadLogger lc {logVault=vault}}
+runTrans :: (LoggerMonad m, MonadUnliftIO m) => DataSource -> Transaction m a -> m a
+runTrans ds trans = flip runReaderT ds $ do
+  DataSource (_,_,pool) <- ask
+  lc <- lift loggerConfig
+  withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn trans c {connLogFunc = fixLn $ toMonadLogger lc}
+
+fixLn :: LogFunc -> LogFunc
+fixLn f a b c str = f a b c $ str <> "\n"
 
 class FromPersistValue a where
   parsePersistValue :: [PersistValue] -> a
@@ -93,18 +95,18 @@ instance PersistField a => FromPersistValue [a] where
 instance FromPersistValue Text where
   parsePersistValue = intercalate "," . rights . map fromPersistValueText
 
-query :: FromPersistValue a => Text -> [PersistValue] -> Transaction IO [a]
+query :: (MonadUnliftIO m, FromPersistValue a) => Text -> [PersistValue] -> Transaction m [a]
 query sql params = do res <- rawQueryRes sql params
                       withAcquire res (\a -> runConduit $ a .| CL.fold i [])
   where i b ps = parsePersistValue ps : b
 
-selectNow :: Transaction IO UTCTime
+selectNow :: MonadUnliftIO m => Transaction m UTCTime
 selectNow = do
-  DataSource (p,_,_,_) <- lift ask
+  DataSource (p,_,_) <- lift ask
   head <$> selectValue (currentSQL p)
 
-selectValue :: (PersistField a) => Text -> Transaction IO [a]
+selectValue :: (PersistField a, MonadUnliftIO m) => Text -> Transaction m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
-class MonadIO m => TransMonad m where
-  transConfig :: m DataSource
+instance LoggerMonad m => LoggerMonad (Transaction m) where
+  loggerConfig = lift  $ lift loggerConfig

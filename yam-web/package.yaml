@@ -27,6 +27,7 @@ dependencies:
   - text
   - lens
   - data-default
+  - unliftio-core
   - string-conversions
 
 defaults:

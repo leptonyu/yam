@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0dcef9916867e6952595cb7c669ad646c6dfd3fa3a4762f572f36d65764d40ed
+-- hash: 0b72633679c8414dad55b9d67c58c29ccc14a7bcda4fb05be0e849f4163e17a0
 
 name:           yam-web
 version:        0.3.2
@@ -46,6 +46,7 @@ library
     , swagger2
     , text
     , transformers
+    , unliftio-core
     , vault
     , wai
     , wai-extra
@@ -76,6 +77,7 @@ executable yam-web
     , swagger2
     , text
     , transformers
+    , unliftio-core
     , vault
     , wai
     , wai-extra
