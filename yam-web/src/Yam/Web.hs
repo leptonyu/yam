@@ -1,15 +1,18 @@
+{-# LANGUAGE NoPolyKinds #-}
+
 module Yam.Web(
     module Yam.Web.Internal
   , module Yam.Web.Swagger
   , module Yam.Web.Middleware
   , YamSettings(..)
+  , Yam
   , defaultYamSettings
   , runServer
   ) where
 
 import           Yam.Config
 import           Yam.Logger
-import           Yam.Web.Internal         hiding (API', mkServe')
+import           Yam.Web.Internal
 import           Yam.Web.Middleware
 import           Yam.Web.Swagger
 
@@ -17,8 +20,6 @@ import           Data.Aeson
 import           Data.Default
 import           Data.Monoid              ((<>))
 import           Data.Proxy
-import           Data.Text                (pack)
-import           Data.Vault.Lazy
 import           Network.Wai
 import           Network.Wai.Handler.Warp (run)
 import           Servant
@@ -49,9 +50,18 @@ defaultYamSettings = do
   lc'      <- stdoutLoggerConfig
   let loggers = lc' { rank = rk }
       middlewares = [traceMiddleware $ traceKey loggers, apacheMiddleware loggers, servantErrorMiddleware loggers]
-  debugLn loggers $ "Load config file " <> pack f
+  logger loggers DEBUG $ "Load config file " <> toLogStr f
   return YamSettings{..}
 
-runServer :: (HasSwagger api, API YamSettings api) => YamSettings -> Proxy api -> ServerT api App -> IO ()
-runServer ys@YamSettings{..} p a = do
-  run port $ mkServeWithSwagger empty Proxy ys middlewares swaggers p a
+type Yam = App YamSettings
+
+instance LoggerMonad Yam where
+  loggerConfig = do
+    (_,YamSettings{..}) <- ask
+    return loggers
+
+runServer :: (HasSwagger api, HasServer api '[YamSettings]) => YamSettings -> Proxy api -> ServerT api Yam -> IO ()
+runServer ys@YamSettings{..} p a = run port $ mkServeWithSwagger Proxy ys middlewares swaggers p a
+
+
+

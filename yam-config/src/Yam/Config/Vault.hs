@@ -14,8 +14,8 @@ import           System.Random
 newtype Box a = Box (Maybe (Key a), Vault)
 
 instance Config (Box a) where
-  fetch _ a = Right a
-  merge = foldl1 $ \(Box (k, v)) (Box (_, v2)) -> Box (k, union v v2)
+  fetch _ = Right
+  merge = foldl1 $ \(Box (k, v)) (Box (_, v2)) -> Box (k, v `union` v2)
   fromFile _ _ = error "Unsupported"
   from _ = error "Unsupported"
 

@@ -40,7 +40,7 @@ defaultConfig :: Config c => IO c
 defaultConfig = do
   args <- getArgs
   envs <- getEnvironment
-  return $ merge $ [fromCommandLine args, fromEnv envs]
+  return $ merge [fromCommandLine args, fromEnv envs]
 
 instance Config Value where
   fetch key = go key (keys "." key)

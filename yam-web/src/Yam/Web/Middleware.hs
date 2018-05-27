@@ -8,6 +8,7 @@ import           Control.Exception
     , catch
     , fromException
     )
+import           Control.Monad                      ((>=>))
 import           Data.Maybe
 import           Data.Monoid                        ((<>))
 import           Data.String.Conversions            (cs)
@@ -24,7 +25,7 @@ prepareMiddleware pre app req resH = do
   app req {vault = vault'} resH
 
 errorMiddleware :: (Request -> SomeException -> IO Response) -> Middleware
-errorMiddleware f app req resH = app req resH `catch` (\e -> f req e >>= resH)
+errorMiddleware f app req resH = app req resH `catch` (f req >=> resH)
 
 apacheMiddleware :: LoggerConfig -> Middleware
 apacheMiddleware lc app req sendResponse = app req $ \res -> do
@@ -43,7 +44,7 @@ apacheMiddleware lc app req sendResponse = app req $ \res -> do
                 <> "\" \""
                 <> toLogStr (fromMaybe "" $ requestHeaderUserAgent req)
                 <> "\"\n"
-    logger lc (vault req) INFO logstr
+    logger lc {logVault = vault req} INFO logstr
     sendResponse res
 
 stdLoggerMiddleware :: IO Middleware
@@ -51,10 +52,8 @@ stdLoggerMiddleware = apacheMiddleware <$> stdoutLoggerConfig
 
 servantErrorMiddleware :: LoggerConfig -> Middleware
 servantErrorMiddleware lc = errorMiddleware $ \req e -> do
-  errorLn (addVaultToLoggerConfig (vault req) lc) (cs $ show e)
-  return . responseServantErr $ case fromException e :: Maybe ServantErr of
-    Nothing  -> err400 { errBody = cs $ show e }
-    Just err -> err
+  logger lc {logVault = vault req} ERROR (toLogStr $ show e)
+  return . responseServantErr $ fromMaybe err400 { errBody = cs $ show e } (fromException e :: Maybe ServantErr)
 
 traceMiddleware :: Key Text -> Middleware
 traceMiddleware k = prepareMiddleware $ \vault -> do

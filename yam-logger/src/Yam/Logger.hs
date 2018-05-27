@@ -1,8 +1,7 @@
 module Yam.Logger(
     LogRank(..)
-  , Logger
   , LoggerConfig(..)
-  , LogFunc
+  , LoggerMonad(..)
   , defaultLoggerConfig
   , stdoutLoggerConfig
   , toMonadLogger
@@ -16,17 +15,17 @@ module Yam.Logger(
   , warnLn
   , errorLn
   , toLogStr
+  , (<>)
   ) where
 
 import           Yam.Config.Vault
 
-import           Control.Monad           (when)
-import           Control.Monad.IO.Class  (MonadIO, liftIO)
+import           Control.Monad          (when)
+import           Control.Monad.IO.Class (MonadIO, liftIO)
 import           Control.Monad.Logger
 import           Data.Aeson
 import           Data.Monoid
-import           Data.String.Conversions (cs)
-import           Data.Text               (Text, pack)
+import           Data.Text              (Text)
 import           Data.Vault.Lazy
 import           System.Log.FastLogger
 
@@ -73,14 +72,6 @@ stdoutLoggerConfig = do
   ls <- newStdoutLoggerSet 4096
   return lc { func = pushLogStr ls }
 
-logger :: LoggerConfig -> Vault -> LogRank -> Logger
-logger LoggerConfig{..} v r str = when (r >= rank) $ do
-  now <- clock
-  let v' = union v logVault
-      nm = extracBoxOrDefault "" $ newBox logKey v'
-      ti = "[" <> extracBoxOrDefault "" (newBox traceKey v') <> "]"
-  func $ toLogStr (cs now <> " [" <> pack (show r) <> "] - " <> ti <> " " <> nm <> " - ") <> str
-
 toRank :: LogLevel -> LogRank
 toRank LevelDebug = DEBUG
 toRank LevelInfo  = INFO
@@ -91,29 +82,45 @@ toRank _          = INFO
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
 toMonadLogger :: LoggerConfig -> LogFunc
-toMonadLogger lc@LoggerConfig{..} _ ls level = logger lc {logVault = addFirstVault ls "." logKey logVault} empty (toRank level)
+toMonadLogger lc@LoggerConfig{..} _ ls level = logger lc { logVault = addFirstVault ls "." logKey logVault} (toRank level)
 
 addVaultToLoggerConfig :: Vault -> LoggerConfig -> LoggerConfig
 addVaultToLoggerConfig vault lc = lc {logVault = union vault $ logVault lc}
 
-logL :: forall msg . (ToLogStr msg) => LoggerConfig -> LogRank -> msg -> IO ()
-logL lc rank = logger lc empty rank . toLogStr
+logger :: LoggerConfig -> LogRank -> Logger
+logger LoggerConfig{..} r str = when (r >= rank) $ do
+  now <- clock
+  let nm :: Text
+      nm = extracBoxOrDefault "" $ newBox logKey logVault
+      ti :: Text
+      ti = extracBoxOrDefault "" (newBox traceKey logVault)
+  func $ toLogStr now <> " [" <> toLogStr (show r) <> "] - [" <> toLogStr ti <> "] " <> toLogStr nm <> " - " <> str
 
-logLn :: LoggerConfig -> LogRank -> Text -> IO ()
-logLn lc rank msg = logL lc rank $ msg <> "\n"
+class MonadIO m => LoggerMonad m where
+  loggerConfig :: m LoggerConfig
 
-traceLn :: MonadIO m => LoggerConfig -> Text -> m ()
-traceLn lc = liftIO . logLn lc TRACE
+logL :: (ToLogStr msg, LoggerMonad m) => LogRank -> msg -> m ()
+logL rank msg = do
+  lc <- loggerConfig
+  liftIO $ logger lc rank $ toLogStr msg
+
+logLn :: (ToLogStr msg, LoggerMonad m) => LogRank -> msg -> m ()
+logLn rank msg = do
+  lc <- loggerConfig
+  liftIO $ logger lc rank $ toLogStr msg <> "\n"
+
+traceLn :: (ToLogStr msg, LoggerMonad m) => msg -> m ()
+traceLn = logLn TRACE
 {-# INLINE traceLn #-}
-debugLn :: MonadIO m => LoggerConfig -> Text -> m ()
-debugLn lc = liftIO . logLn lc DEBUG
+debugLn :: (ToLogStr msg, LoggerMonad m) => msg -> m ()
+debugLn = logLn DEBUG
 {-# INLINE debugLn #-}
-infoLn  :: MonadIO m => LoggerConfig -> Text -> m ()
-infoLn  lc = liftIO . logLn lc INFO
+infoLn  :: (ToLogStr msg, LoggerMonad m) => msg -> m ()
+infoLn  = logLn INFO
 {-# INLINE infoLn #-}
-warnLn  :: MonadIO m => LoggerConfig -> Text -> m ()
-warnLn  lc = liftIO . logLn lc WARN
+warnLn  :: (ToLogStr msg, LoggerMonad m) => msg -> m ()
+warnLn  = logLn WARN
 {-# INLINE warnLn #-}
-errorLn :: MonadIO m => LoggerConfig -> Text -> m ()
-errorLn lc = liftIO . logLn lc ERROR
+errorLn :: (ToLogStr msg, LoggerMonad m) => msg -> m ()
+errorLn = logLn ERROR
 {-# INLINE errorLn #-}

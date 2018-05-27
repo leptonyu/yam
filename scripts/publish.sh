@@ -33,7 +33,7 @@ stack haddock
 ls | grep yam- | while read pkg; do
   stack sdist $pkg && stack upload $pkg
   cd $pkg
-  hup docboth -u $HACKAGE_USER -p $HACKAGE_PASS
+  stack exec hup -- docboth -u $HACKAGE_USER -p $HACKAGE_PASS
   cd "$ROOT"
 done
 

@@ -9,12 +9,10 @@ import           Control.Lens       hiding (Context)
 import           Data.Aeson
 import           Data.Aeson.Types   (typeMismatch)
 import           Data.Default
-import           Data.Dynamic
 import           Data.Maybe
 import           Data.Reflection
 import           Data.Swagger
 import           Data.Text          (Text)
-import           Data.Vault.Lazy
 import           GHC.TypeLits
 import           Network.Wai
 import           Servant
@@ -65,11 +63,11 @@ swagger conf _ proxy api = go (uiType conf) (f conf $ toSwagger proxy) :<|> api
                 & info.version     .~ apiVersion
                 & info.contact     ?~ Contact contractName Nothing contractEmail
 
-mkServeWithSwagger :: (Typeable a, HasSwagger api, API a api) => Vault -> Proxy a -> a -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api App -> Application
-mkServeWithSwagger vault pa ka middlewares conf proxy server =
+mkServeWithSwagger :: (HasSwagger api, HasServer api '[c]) => Proxy c -> c -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api (App c) -> Application
+mkServeWithSwagger pc c middlewares conf proxy server =
   if enabled conf
-    then reifyGroup conf $ \p -> mkServe' (\(p0,s0) -> (p,swagger conf p p0 s0)) vault pa ka middlewares proxy server
-    else mkServe' id vault pa ka middlewares proxy server
+    then reifyGroup conf $ \p -> mkServe' (swagger conf p proxy) pc c middlewares p proxy server
+    else mkServe pc c middlewares proxy server
 
 reifyGroup :: SwaggerConfig -> (forall d s. (KnownSymbol d ,KnownSymbol s)=> Proxy (SwaggerSchemaUI d s :<|> api) -> r) -> r
 reifyGroup SwaggerConfig{..} f = reifySymbol uiPath $ \pd -> reifySymbol apiPath $ \ps -> f $ group pd ps

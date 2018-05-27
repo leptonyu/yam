@@ -89,7 +89,7 @@ query sql params = do res <- rawQueryRes sql params
 
 selectNow :: Transaction IO UTCTime
 selectNow = do
-  (p,_) <- lift $ ask
+  (p,_) <- lift ask
   head <$> selectValue (currentSQL p)
 
 selectValue :: (PersistField a) => Text -> Transaction IO [a]
