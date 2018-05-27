@@ -12,6 +12,7 @@ dependencies:
   - base >= 4.7 && < 5
   - yam-logger
   - yam-config
+  - yam-transaction
   - wai
   - wai-extra
   - warp
@@ -25,10 +26,8 @@ dependencies:
   - aeson
   - text
   - lens
-  - mtl
   - data-default
   - string-conversions
-  - random
 
 defaults:
   github: leptonyu/hpack-template
@@ -43,4 +42,9 @@ library:
     - Yam.Web.Swagger
     - Yam.Web.Internal
     - Yam.Web.Middleware
-    - Yam.Web.Demo
+
+executable:
+  main: Main.hs
+  source-dirs: demo
+  dependencies:
+    - yam-web

@@ -1,4 +1,4 @@
-module Yam.Web.Demo where
+module Main where
 
 import           Yam.Logger
 import           Yam.Web
@@ -23,8 +23,8 @@ errorService = error "No"
 servantService :: Yam Text
 servantService = throw err401
 
-runDemo :: IO ()
-runDemo = do
+main :: IO ()
+main = do
   ys <- defaultYamSettings
-  logger (loggers ys) INFO (toLogStr $ show ys)
+  logger (loggers ys) INFO (toLogStr (show ys) <> "\n")
   runServer ys (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService)

@@ -15,7 +15,6 @@ dependencies:
   - monad-logger
   - aeson
   - text
-  - string-conversions
   - vault
 
 defaults:

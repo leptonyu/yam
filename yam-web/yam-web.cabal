@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: dec6bcccd3d9ec74b394f7cfd7d9f5a1ed8de60ce3ee20bf4f4725a01c9c301e
+-- hash: 0dcef9916867e6952595cb7c669ad646c6dfd3fa3a4762f572f36d65764d40ed
 
 name:           yam-web
 version:        0.3.2
@@ -29,7 +29,6 @@ library
       Yam.Web.Swagger
       Yam.Web.Internal
       Yam.Web.Middleware
-      Yam.Web.Demo
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
@@ -39,8 +38,6 @@ library
     , base >=4.7 && <5
     , data-default
     , lens
-    , mtl
-    , random
     , reflection
     , servant-server
     , servant-swagger
@@ -55,4 +52,36 @@ library
     , warp
     , yam-config
     , yam-logger
+    , yam-transaction
+  default-language: Haskell2010
+
+executable yam-web
+  main-is: Main.hs
+  other-modules:
+      Paths_yam_web
+  hs-source-dirs:
+      demo
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
+  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans
+  build-depends:
+      aeson
+    , base >=4.7 && <5
+    , data-default
+    , lens
+    , reflection
+    , servant-server
+    , servant-swagger
+    , servant-swagger-ui
+    , string-conversions
+    , swagger2
+    , text
+    , transformers
+    , vault
+    , wai
+    , wai-extra
+    , warp
+    , yam-config
+    , yam-logger
+    , yam-transaction
+    , yam-web
   default-language: Haskell2010

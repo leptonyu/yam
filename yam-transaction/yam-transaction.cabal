@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1465d2452541ce416e580c21cd2e1015cacda43f83a45b1f5918b7214c1ebb6d
+-- hash: 4739d7a08350b4c0aaf0a184e357f36d395a74259c23535bd9a4bf4329948f8b
 
 name:           yam-transaction
 version:        0.3.2
@@ -40,15 +40,16 @@ library
     , conduit
     , data-default
     , monad-logger
-    , mtl
     , persistent
     , persistent-postgresql
     , persistent-sqlite
+    , resource-pool
     , resourcet
     , string-conversions
     , text
     , time
     , transformers
     , unliftio-core
+    , vault
     , yam-logger
   default-language: Haskell2010

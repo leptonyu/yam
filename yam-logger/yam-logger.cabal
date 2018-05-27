@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f50f097409dfda611509850ed72b1dce45d97b56c5725d89ebe7dec724b59766
+-- hash: d1cea5416c6a6f0df10ed8a1216938a37672887a8959f71b104cdb44524ee921
 
 name:           yam-logger
 version:        0.3.2
@@ -36,7 +36,6 @@ library
     , base >=4.7 && <5
     , fast-logger
     , monad-logger
-    , string-conversions
     , text
     , vault
     , yam-config

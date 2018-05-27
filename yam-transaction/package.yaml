@@ -12,7 +12,6 @@ dependencies:
   - base >= 4.7 && < 5
   - yam-logger
   - monad-logger
-  - mtl
   - transformers
   - persistent
   - persistent-sqlite
@@ -22,9 +21,11 @@ dependencies:
   - text
   - time
   - conduit
+  - resource-pool
   - resourcet
   - unliftio-core
   - string-conversions
+  - vault
 
 defaults:
   github: leptonyu/hpack-template
