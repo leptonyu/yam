@@ -12,6 +12,7 @@ module Yam.Web(
   ) where
 
 import           Yam.Config
+import           Yam.Config.Vault
 import           Yam.Logger
 import           Yam.Transaction
 import           Yam.Transaction.Postgresql
@@ -20,7 +21,7 @@ import           Yam.Web.Internal
 import           Yam.Web.Middleware
 import           Yam.Web.Swagger
 
-import           Control.Exception          (throw)
+import           Control.Exception          (finally, throw)
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Trans.Except (runExceptT)
 import           Data.Aeson
@@ -57,7 +58,8 @@ defaultYamSettings = do
   rk       <- getValueOrDef INFO "yam.log.level" conf
   port     <- getValueOrDef 8080 "yam.port"      conf
   lc'      <- stdoutLoggerConfig
-  let loggers = lc' { rank = rk }
+  gtc      <- randomString
+  let loggers = lc' { rank = rk , logVault = addFirstVault ("[" <> gtc <> "]") "." (logKey lc') $ logVault lc'}
       middlewares = [traceMiddleware $ traceKey loggers, apacheMiddleware loggers, servantErrorMiddleware loggers]
   dsc      <- getValueOrDef def "yam.datasource" conf :: IO DataSourceConfig
   dataSources <- if Yam.Transaction.enabled dsc
@@ -90,6 +92,10 @@ runDb r = do
     Just ds -> runTrans ds r
 
 runServer :: (HasSwagger api, HasServer api '[YamSettings]) => YamSettings -> Proxy api -> ServerT api Yam -> IO ()
-runServer ys@YamSettings{..} p a = run port $ mkServeWithSwagger p Proxy (ys :. EmptyContext) Proxy ys middlewares swaggers a
+runServer ys@YamSettings{..} p a = run port (mkServeWithSwagger p Proxy (ys :. EmptyContext) Proxy ys middlewares swaggers a) `finally` go loggers dataSources
+  where
+    go l = \case
+      Nothing -> return ()
+      Just d  -> closeDataSource l d
 
 

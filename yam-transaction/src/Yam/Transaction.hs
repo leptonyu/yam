@@ -5,6 +5,7 @@ module Yam.Transaction(
   , DataSourceConfig(..)
   , DataSourceProvider(..)
   , dataSource
+  , closeDataSource
   , DataSource
   , runTrans
   , query
@@ -27,6 +28,7 @@ import           Data.Default
 import           Data.Either                (rights)
 import           Data.Maybe                 (fromJust)
 import           Data.Monoid                ((<>))
+import           Data.Pool
 import           Data.Pool                  (withResource)
 import           Data.Text                  (Text, intercalate, unpack)
 import           Data.Time                  (UTCTime)
@@ -76,6 +78,11 @@ dataSource lc dsc@DataSourceConfig{..} ps = do
   case Prelude.lookup dstype $ fmap (\p->(datasource p,p)) ps of
     Nothing -> error $ "DataSource Type " <> unpack dstype <> " Not Supported"
     Just v  -> (\d -> DataSource (v,dsc,d)) <$> runLoggingT (createConnectionPool v dsc) (fixLn $ toMonadLogger lc)
+
+closeDataSource :: LoggerConfig -> DataSource -> IO ()
+closeDataSource lc (DataSource (_,DataSourceConfig{..},pool)) = do
+  logger lc INFO $ "Close database " <> toLogStr dstype <> "\n"
+  destroyAllResources pool
 
 runTrans :: (LoggerMonad m, MonadUnliftIO m) => DataSource -> Transaction m a -> m a
 runTrans ds trans = flip runReaderT ds $ do
