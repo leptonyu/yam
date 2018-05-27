@@ -61,7 +61,7 @@ instance LoggerMonad Yam where
     return loggers
 
 runServer :: (HasSwagger api, HasServer api '[YamSettings]) => YamSettings -> Proxy api -> ServerT api Yam -> IO ()
-runServer ys@YamSettings{..} p a = run port $ mkServeWithSwagger Proxy ys middlewares swaggers p a
+runServer ys@YamSettings{..} p a = run port $ mkServeWithSwagger p Proxy (ys :. EmptyContext) Proxy ys middlewares swaggers a
 
 
 

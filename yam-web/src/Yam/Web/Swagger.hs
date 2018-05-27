@@ -63,11 +63,21 @@ swagger conf _ proxy api = go (uiType conf) (f conf $ toSwagger proxy) :<|> api
                 & info.version     .~ apiVersion
                 & info.contact     ?~ Contact contractName Nothing contractEmail
 
-mkServeWithSwagger :: (HasSwagger api, HasServer api '[c]) => Proxy c -> c -> [Middleware] -> SwaggerConfig -> Proxy api -> ServerT api (App c) -> Application
-mkServeWithSwagger pc c middlewares conf proxy server =
+mkServeWithSwagger
+  :: (HasSwagger api, HasServer api context)
+  => Proxy api
+  -> Proxy context
+  -> Context context
+  -> Proxy c
+  -> c
+  -> [Middleware]
+  -> SwaggerConfig
+  -> ServerT api (App c)
+  -> Application
+mkServeWithSwagger proxy pcxt cxt pc c middlewares conf server =
   if enabled conf
-    then reifyGroup conf $ \p -> mkServe' (swagger conf p proxy) pc c middlewares p proxy server
-    else mkServe pc c middlewares proxy server
+    then reifyGroup conf $ \p -> mkServe' (swagger conf p proxy) p proxy pcxt cxt pc c middlewares server
+    else mkServe proxy pcxt cxt pc c middlewares server
 
 reifyGroup :: SwaggerConfig -> (forall d s. (KnownSymbol d ,KnownSymbol s)=> Proxy (SwaggerSchemaUI d s :<|> api) -> r) -> r
 reifyGroup SwaggerConfig{..} f = reifySymbol uiPath $ \pd -> reifySymbol apiPath $ \ps -> f $ group pd ps
