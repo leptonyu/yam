@@ -39,9 +39,11 @@ type Transaction m = SqlPersistT (ReaderT DataSource m)
 
 data DataSourceConfig = DataSourceConfig
   { dstype  :: Text
+  , dbname  :: Text
   , url     :: Text
   , user    :: Text
   , pass    :: Text
+  , extra   :: Text
   , port    :: Int
   , thread  :: Int
   , enabled :: Bool
@@ -50,9 +52,11 @@ data DataSourceConfig = DataSourceConfig
 instance FromJSON DataSourceConfig where
   parseJSON (Object v) = DataSourceConfig
     <$> v .:? "type"      .!= "sqlite"
-    <*> v .:? "url"       .!= ":memory:"
+    <*> v .:? "dbname"    .!= ":memory:"
+    <*> v .:? "url"       .!= "localhost"
     <*> v .:? "username"  .!= "sa"
     <*> v .:? "password"  .!= ""
+    <*> v .:? "extra"     .!= ""
     <*> v .:? "port"      .!= 0
     <*> v .:? "pool-size" .!= 10
     <*> v .:? "enabled"   .!= True

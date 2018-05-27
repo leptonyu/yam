@@ -13,5 +13,10 @@ postgresqlProvider = DataSourceProvider "postgresql" "SELECT CURRENT_TIMESTAMP" 
   where
     go DataSourceConfig{..} =
       let port' = if port==0 then "5432" else pack (show port)
-          conn  = "host=" <> url <> " port=" <> port' <> " user=" <> user <> " pass=" <> pass
+          conn  = "dbname=" <> dbname
+               <> " host="  <> url
+               <> " port="  <> port'
+               <> " user="  <> user
+               <> " password=" <> pass
+               <> " " <> extra
       in createPostgresqlPool (cs conn) thread

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: d1cea5416c6a6f0df10ed8a1216938a37672887a8959f71b104cdb44524ee921
+-- hash: 7e688c8b9c728c0de83309aa03642651d50cd812e7e007aef0002997784fffa4
 
 name:           yam-logger
 version:        0.3.2
@@ -37,6 +37,7 @@ library
     , fast-logger
     , monad-logger
     , text
+    , transformers
     , vault
     , yam-config
   default-language: Haskell2010

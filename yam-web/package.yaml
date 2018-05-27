@@ -47,5 +47,11 @@ library:
 executable:
   main: Main.hs
   source-dirs: demo
+  other-modules:
+    - Model
   dependencies:
     - yam-web
+    - persistent-template
+    - persistent
+    - time
+    - text

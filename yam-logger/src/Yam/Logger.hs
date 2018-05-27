@@ -20,12 +20,13 @@ module Yam.Logger(
 
 import           Yam.Config.Vault
 
-import           Control.Monad          (when)
-import           Control.Monad.IO.Class (MonadIO, liftIO)
+import           Control.Monad              (when)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
 import           Control.Monad.Logger
+import           Control.Monad.Trans.Reader
 import           Data.Aeson
 import           Data.Monoid
-import           Data.Text              (Text)
+import           Data.Text                  (Text)
 import           Data.Vault.Lazy
 import           System.Log.FastLogger
 
@@ -98,6 +99,9 @@ logger LoggerConfig{..} r str = when (r >= rank) $ do
 
 class MonadIO m => LoggerMonad m where
   loggerConfig :: m LoggerConfig
+
+instance MonadIO m => LoggerMonad (ReaderT LoggerConfig m) where
+  loggerConfig = ask
 
 logL :: (ToLogStr msg, LoggerMonad m) => LogRank -> msg -> m ()
 logL rank msg = do

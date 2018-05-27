@@ -8,6 +8,7 @@ module Yam.Web(
   , Yam
   , defaultYamSettings
   , runDb
+  , runDbIO
   , runServer
   ) where
 
@@ -24,6 +25,7 @@ import           Yam.Web.Swagger
 import           Control.Exception          (finally, throw)
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Trans.Except (runExceptT)
+import           Control.Monad.Trans.Reader (ReaderT, runReaderT)
 import           Data.Aeson
 import           Data.Default
 import           Data.Monoid                ((<>))
@@ -90,6 +92,11 @@ runDb r = do
   case dataSources of
     Nothing -> error $ "Datasource disabled"
     Just ds -> runTrans ds r
+
+runDbIO :: YamSettings -> Transaction (ReaderT LoggerConfig IO) () -> IO ()
+runDbIO YamSettings{..} r = case dataSources of
+  Nothing -> return ()
+  Just v  -> runReaderT (runTrans v r) loggers
 
 runServer :: (HasSwagger api, HasServer api '[YamSettings]) => YamSettings -> Proxy api -> ServerT api Yam -> IO ()
 runServer ys@YamSettings{..} p a = run port (mkServeWithSwagger p Proxy (ys :. EmptyContext) Proxy ys middlewares swaggers a) `finally` go loggers dataSources

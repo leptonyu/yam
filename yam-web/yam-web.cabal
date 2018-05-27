@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0b72633679c8414dad55b9d67c58c29ccc14a7bcda4fb05be0e849f4163e17a0
+-- hash: 547c7551013fa8c018b7e07b2210cedf3026a1aea4a447e287830954e4dec7ad
 
 name:           yam-web
 version:        0.3.2
@@ -59,7 +59,7 @@ library
 executable yam-web
   main-is: Main.hs
   other-modules:
-      Paths_yam_web
+      Model
   hs-source-dirs:
       demo
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
@@ -69,6 +69,8 @@ executable yam-web
     , base >=4.7 && <5
     , data-default
     , lens
+    , persistent
+    , persistent-template
     , reflection
     , servant-server
     , servant-swagger
@@ -76,6 +78,7 @@ executable yam-web
     , string-conversions
     , swagger2
     , text
+    , time
     , transformers
     , unliftio-core
     , vault

@@ -1,5 +1,7 @@
 module Main where
 
+import           Model
+
 import           Yam.Logger
 import           Yam.Transaction
 import           Yam.Web
@@ -40,4 +42,5 @@ main :: IO ()
 main = do
   ys <- defaultYamSettings
   logger (loggers ys) INFO (toLogStr (show ys) <> "\n")
+  runDbIO ys migrateSql
   runServer ys (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService :<|> dbService)
