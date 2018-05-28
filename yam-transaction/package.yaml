@@ -1,5 +1,5 @@
 name: yam-transaction
-version: 0.3.2
+version: 0.3.3
 synopsis: Yam transaction
 description: transaction module for yam
 maintainer: Daniel YU <leptonyu@gmail.com>
