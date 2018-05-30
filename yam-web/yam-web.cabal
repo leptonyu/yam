@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 547c7551013fa8c018b7e07b2210cedf3026a1aea4a447e287830954e4dec7ad
+-- hash: 90996c2a545d34b4c05940d0cfe69fec3a74b8b3a610f6fad37ef445c7f03da8
 
 name:           yam-web
-version:        0.3.2
+version:        0.3.3
 synopsis:       Yam Web
 description:    base web module for yam
 category:       Project

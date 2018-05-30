@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7e688c8b9c728c0de83309aa03642651d50cd812e7e007aef0002997784fffa4
+-- hash: d81fa5d1662499956d7645b3bd1c8611206194540c5270f8250ebab20b3f8a69
 
 name:           yam-logger
-version:        0.3.2
+version:        0.3.3
 synopsis:       Yam Logger
 description:    logger module for yam
 category:       Project
