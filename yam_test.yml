@@ -1,0 +1,4 @@
+yam:
+  application: yam
+  datasource:
+    url: ':memory:'

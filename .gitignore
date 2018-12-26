@@ -30,4 +30,6 @@ pgdata
 report.html
 app.yaml
 
+.vscode
+
 # End of https://www.gitignore.io/api/haskell

@@ -1,0 +1,73 @@
+name:                yam
+version:             0.4.0
+#synopsis:
+#description:
+homepage:            https://github.com/leptonyu/yam#readme
+license:             BSD3
+author:              Daniel YU
+maintainer:          Daniel YU <leptonyu@gmail.com>
+copyright:           (c) 2018 Daniel YU
+category:            Web
+extra-source-files:
+- README.md
+- yam_test.yml
+ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+
+dependencies:
+  - base >= 4.7 && < 5
+  - salak
+  - text
+  - resourcet
+  - conduit
+  - persistent
+  - unliftio-core
+  - monad-logger
+  - aeson
+  - resource-pool
+  - vault
+  - wai
+  - random
+  - servant-server
+  - bytestring
+  - servant-swagger
+  - servant-swagger-ui
+  - reflection
+  - warp
+  - mtl
+  - data-default
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Yam
+    - Yam.Config
+    - Yam.DataSource
+    - Yam.Web.Middleware
+    - Yam.Web.Swagger
+  other-modules:
+    - Yam.Util
+
+executables:
+  yam:
+    source-dirs:      demo
+    main:             Main.hs
+    dependencies:
+      - yam
+      - servant-server
+      - mtl
+      - time
+      - salak
+      - persistent-sqlite
+      - wai-extra
+
+tests:
+  spec:
+    main: Spec.hs
+    source-dirs:
+      - test
+      - src
+    dependencies:
+      - hspec == 2.*
+      - QuickCheck
+      - salak
+      - text
