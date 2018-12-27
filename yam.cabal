@@ -4,10 +4,11 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e83785676c30b31648252ed53788bb231feec72f33879ce4116cbf32efdbad48
+-- hash: c2763c742d9115cc6b3b693cfab16de4ee30c9a27302cffd5a229e58c698da3a
 
 name:           yam
 version:        0.4.0
+synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam#readme
 author:         Daniel YU
