@@ -8,23 +8,26 @@ module Main where
 
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
-import qualified Data.Salak                           as S
-import           Data.Text                            (Text)
+import           Data.Default
+import           Data.Maybe                     (fromMaybe)
+import qualified Data.Salak                     as S
+import           Data.Text                      (Text)
 import           Data.Time
 import           Database.Persist.Sqlite
-import           Network.Wai.Middleware.RequestLogger
 import           Servant
 import           Yam
 
 type UserApi
-     = "users" :> Get '[JSON] Text
-  :<|> "users" :> "error" :> Get '[JSON] Text
+     = "users"              :> Get '[JSON] Text
+  :<|> "users" :> "error"   :> Get '[JSON] Text
   :<|> "users" :> "servant" :> Get '[JSON] Text
-  :<|> "users" :> "db" :> Get '[JSON] Text
+  :<|> "users" :> "db"      :> Get '[JSON] Text
+
+service = userService :<|> errorService :<|> servantService :<|> dbService
 
 userService :: App Text
 userService = do
-  (r,_) <- ask
+  (r,_,_) <- ask
   logInfo $ "Hello: " <> showText r
   return "Hello"
 
@@ -32,7 +35,7 @@ errorService :: App Text
 errorService = logError "No" >> return "No"
 
 servantService :: App Text
-servantService = throwServant err401
+servantService = throwS err401 "Servant"
 
 dbService :: App Text
 dbService = do
@@ -51,6 +54,7 @@ main :: IO ()
 main = do
   p <- S.defaultPropertiesWithFile "yam_test.yml"
   let config :: Maybe YamConfig = S.lookup "yam" p
-  runStdoutLoggingT $ case config of
-    Just c  -> start c (Proxy :: Proxy UserApi) (userService :<|> errorService :<|> servantService :<|> dbService) [logStdoutDev] (Just db) (return ())
+      lc     :: LogConfig       = fromMaybe def $ S.lookup "logging" p
+  withLogger lc $ case config of
+    Just c  -> start c (Proxy :: Proxy UserApi) service [] (Just db) (return ())
     Nothing -> logError "Yam Config not found"

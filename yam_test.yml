@@ -2,3 +2,6 @@ yam:
   application: yam
   datasource:
     url: ':memory:'
+logging:
+  level: info
+  file: .stack-work/1.log

@@ -242,5 +242,6 @@ language_extensions:
   - TypeOperators
   - TypeSynonymInstances
   - ViewPatterns
+  - ImplicitParams
   # - TemplateHaskell
   # - QuasiQuotes

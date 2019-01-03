@@ -11,17 +11,18 @@ category:            Web
 extra-source-files:
 - README.md
 - yam_test.yml
-ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
 
 dependencies:
   - base >= 4.7 && < 5
-  - salak
   - text
   - resourcet
   - conduit
   - persistent
   - unliftio-core
   - monad-logger
+  - fast-logger
+  - zlib
   - aeson
   - resource-pool
   - vault
@@ -41,8 +42,8 @@ library:
   exposed-modules:
     - Yam
     - Yam.Config
+    - Yam.Logger
     - Yam.DataSource
-    - Yam.Web.Middleware
     - Yam.Web.Swagger
   other-modules:
     - Yam.Util

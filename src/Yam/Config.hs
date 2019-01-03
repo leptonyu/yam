@@ -19,5 +19,5 @@ instance FromJSON YamConfig where
     <$> v .:  "datasource"
     <*> v .:? "swagger" .!= def
     <*> v .:  "application"
-    <*> v .:? "port" .!= 8888
+    <*> v .:? "port"    .!= 8888
 

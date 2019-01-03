@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c2763c742d9115cc6b3b693cfab16de4ee30c9a27302cffd5a229e58c698da3a
+-- hash: 15b1aef473c1e4b50204b80c08a04842060f71d1aee1bdfcc6a2d9258acabef5
 
 name:           yam
 version:        0.4.0
@@ -25,20 +25,21 @@ library
   exposed-modules:
       Yam
       Yam.Config
+      Yam.Logger
       Yam.DataSource
-      Yam.Web.Middleware
       Yam.Web.Swagger
   other-modules:
       Yam.Util
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
     , base >=4.7 && <5
     , bytestring
     , conduit
     , data-default
+    , fast-logger
     , monad-logger
     , mtl
     , persistent
@@ -46,7 +47,6 @@ library
     , reflection
     , resource-pool
     , resourcet
-    , salak
     , servant-server
     , servant-swagger
     , servant-swagger-ui
@@ -55,6 +55,7 @@ library
     , vault
     , wai
     , warp
+    , zlib
   default-language: Haskell2010
 
 executable yam
@@ -63,13 +64,14 @@ executable yam
       Paths_yam
   hs-source-dirs:
       demo
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
     , base >=4.7 && <5
     , bytestring
     , conduit
     , data-default
+    , fast-logger
     , monad-logger
     , mtl
     , persistent
@@ -90,6 +92,7 @@ executable yam
     , wai-extra
     , warp
     , yam
+    , zlib
   default-language: Haskell2010
 
 test-suite spec
@@ -99,14 +102,14 @@ test-suite spec
       Yam
       Yam.Config
       Yam.DataSource
+      Yam.Logger
       Yam.Util
-      Yam.Web.Middleware
       Yam.Web.Swagger
       Paths_yam
   hs-source-dirs:
       test
       src
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck
     , aeson
@@ -114,6 +117,7 @@ test-suite spec
     , bytestring
     , conduit
     , data-default
+    , fast-logger
     , hspec ==2.*
     , monad-logger
     , mtl
@@ -131,4 +135,5 @@ test-suite spec
     , vault
     , wai
     , warp
+    , zlib
   default-language: Haskell2010
