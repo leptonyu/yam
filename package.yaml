@@ -26,7 +26,6 @@ dependencies:
   - resource-pool
   - vault
   - wai
-  - wai-extra
   - random
   - servant-server
   - bytestring
