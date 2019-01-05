@@ -1,25 +1,17 @@
-{-# LANGUAGE ConstraintKinds   #-}
-{-# LANGUAGE FlexibleContexts  #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types        #-}
-{-# LANGUAGE RecordWildCards   #-}
-module Yam.Logger where
+module Yam.Logger(
+    withLogger
+  , addTrace
+  , LogConfig(..)
+  ) where
 
-import           Codec.Compression.GZip         ()
-import           Control.Exception              (bracket)
-import           Control.Monad                  (when)
-import           Control.Monad.Logger.CallStack
-import           Data.Aeson
-import           Data.Default
-import           Data.Maybe
-import           Data.Text                      (Text, toLower)
-import           Data.Word
+import           Control.Exception     (bracket)
+import           Control.Monad         (when)
+import qualified Data.Text             as T
 import           System.Log.FastLogger
-
-type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+import           Yam.Types
 
 instance FromJSON LogLevel where
-  parseJSON v = go . toLower <$> parseJSON v
+  parseJSON v = go . T.toLower <$> parseJSON v
     where
       go :: Text -> LogLevel
       go "debug" = LevelDebug
@@ -28,6 +20,7 @@ instance FromJSON LogLevel where
       go "error" = LevelError
       go level   = LevelOther level
 
+{-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
 toStr LevelDebug     = "DEBUG"
 toStr LevelInfo      = " INFO"
@@ -41,10 +34,10 @@ data LogConfig = LogConfig
   , maxSize       :: Word32
   , rotateHistory :: Word16
   , level         :: LogLevel
-  } deriving Show
+  } deriving (Eq, Show)
 
 instance Default LogConfig where
-  def = fromJust $ decode "{}"
+  def = defJson
 
 instance FromJSON LogConfig where
   parseJSON = withObject "LogConfig" $ \v -> LogConfig
@@ -54,8 +47,8 @@ instance FromJSON LogConfig where
     <*> v .:? "max-history" .!= 256
     <*> v .:? "level"       .!= LevelInfo
 
-newLogger :: LogConfig -> IO (LogFunc, IO ())
-newLogger LogConfig{..} = do
+newLogger :: Text -> LogConfig -> IO (LogFunc, IO ())
+newLogger name LogConfig{..} = do
   tc        <- newTimeCache "%Y-%m-%d %T"
   let ft = if file == ""
             then LogStdout $ fromIntegral bufferSize
@@ -65,10 +58,10 @@ newLogger LogConfig{..} = do
   where
     toLogger f Loc{..} _ ll s = when (level <= ll) $ f $ \t ->
       let locate = if ll /= LevelError then "" else "@" <> toLogStr loc_filename <> toLogStr (show loc_start)
-      in toLogStr t <> " " <> toStr ll <> " " <> toLogStr loc_module <> " " <> locate <> " - " <> s <> "\n"
+      in toLogStr t <> " " <> toStr ll <> " [" <> toLogStr name <> "] " <> toLogStr loc_module <> " " <> locate <> " - " <> s <> "\n"
 
-withLogger :: LogConfig -> LoggingT IO a -> IO a
-withLogger lc action = bracket (newLogger lc) snd $ \(f,_) -> runLoggingT action f
+withLogger :: Text -> LogConfig -> LoggingT IO a -> IO a
+withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT action f
 
 addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = f a b c ("[" <> toLogStr tid <> "] " <> d)

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 15b1aef473c1e4b50204b80c08a04842060f71d1aee1bdfcc6a2d9258acabef5
+-- hash: 8252d37ae01c1de9fc2540db3e4b25ed0ca282abb51921fd1b5f1ba2217376b4
 
 name:           yam
 version:        0.4.0
@@ -24,14 +24,16 @@ extra-source-files:
 library
   exposed-modules:
       Yam
-      Yam.Config
-      Yam.Logger
-      Yam.DataSource
-      Yam.Web.Swagger
+      Yam.Internal
   other-modules:
-      Yam.Util
+      Yam.Types
+      Yam.Logger
+      Yam.Swagger
+      Yam.Trace
+      Yam.DataSource
   hs-source-dirs:
       src
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
@@ -47,6 +49,7 @@ library
     , reflection
     , resource-pool
     , resourcet
+    , salak
     , servant-server
     , servant-swagger
     , servant-swagger-ui
@@ -54,8 +57,8 @@ library
     , unliftio-core
     , vault
     , wai
+    , wai-extra
     , warp
-    , zlib
   default-language: Haskell2010
 
 executable yam
@@ -64,6 +67,7 @@ executable yam
       Paths_yam
   hs-source-dirs:
       demo
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
@@ -92,7 +96,6 @@ executable yam
     , wai-extra
     , warp
     , yam
-    , zlib
   default-language: Haskell2010
 
 test-suite spec
@@ -100,15 +103,17 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Yam
-      Yam.Config
       Yam.DataSource
+      Yam.Internal
       Yam.Logger
-      Yam.Util
-      Yam.Web.Swagger
+      Yam.Swagger
+      Yam.Trace
+      Yam.Types
       Paths_yam
   hs-source-dirs:
       test
       src
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck
@@ -134,6 +139,6 @@ test-suite spec
     , unliftio-core
     , vault
     , wai
+    , wai-extra
     , warp
-    , zlib
   default-language: Haskell2010

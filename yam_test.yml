@@ -1,7 +1,6 @@
 yam:
-  application: yam
-  datasource:
-    url: ':memory:'
-logging:
-  level: info
-  file: .stack-work/1.log
+  application:
+    name: yam
+    port: 9999
+  logging:
+    # file: .stack-work/1.log

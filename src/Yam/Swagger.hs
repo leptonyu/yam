@@ -1,23 +1,11 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RecordWildCards   #-}
-{-# LANGUAGE TypeFamilies      #-}
-{-# LANGUAGE TypeOperators     #-}
-module Yam.Web.Swagger(
-    HasSwagger
-  , SwaggerConfig(..)
-  , serveWithContextAndSwagger
-  , module Servant
-  ) where
+{-# LANGUAGE NoPolyKinds #-}
+module Yam.Swagger where
 
-import           Data.Aeson
-import           Data.Default
-import           Data.Maybe
 import           Data.Reflection
 import           GHC.TypeLits
-import           Servant
 import           Servant.Swagger
 import           Servant.Swagger.UI
+import           Yam.Types
 
 data SwaggerConfig = SwaggerConfig
   { urlDir    :: String
@@ -26,7 +14,7 @@ data SwaggerConfig = SwaggerConfig
   } deriving (Eq, Show)
 
 instance Default SwaggerConfig where
-  def = fromJust $ decode "{}"
+  def = defJson
 
 instance FromJSON SwaggerConfig where
   parseJSON = withObject "SwaggerConfig" $ \v -> SwaggerConfig

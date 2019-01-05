@@ -22,11 +22,11 @@ dependencies:
   - unliftio-core
   - monad-logger
   - fast-logger
-  - zlib
   - aeson
   - resource-pool
   - vault
   - wai
+  - wai-extra
   - random
   - servant-server
   - bytestring
@@ -36,17 +36,19 @@ dependencies:
   - warp
   - mtl
   - data-default
+  - salak
 
 library:
   source-dirs: src
   exposed-modules:
     - Yam
-    - Yam.Config
-    - Yam.Logger
-    - Yam.DataSource
-    - Yam.Web.Swagger
+    - Yam.Internal
   other-modules:
-    - Yam.Util
+    - Yam.Types
+    - Yam.Logger
+    - Yam.Swagger
+    - Yam.Trace
+    - Yam.DataSource
 
 executables:
   yam:
@@ -57,7 +59,6 @@ executables:
       - servant-server
       - mtl
       - time
-      - salak
       - persistent-sqlite
       - wai-extra
 
@@ -70,5 +71,47 @@ tests:
     dependencies:
       - hspec == 2.*
       - QuickCheck
-      - salak
       - text
+
+default-extensions:
+  - AutoDeriveTypeable
+  - BangPatterns
+  - BinaryLiterals
+  - ConstraintKinds
+  - DataKinds
+  - DefaultSignatures
+  - DeriveDataTypeable
+  - DeriveFoldable
+  - DeriveFunctor
+  - DeriveGeneric
+  - DeriveTraversable
+  - DuplicateRecordFields
+  - DoAndIfThenElse
+  - EmptyDataDecls
+  - ExistentialQuantification
+  - FlexibleContexts
+  - FlexibleInstances
+  - FunctionalDependencies
+  - GADTs
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - KindSignatures
+  - LambdaCase
+  - MonadFailDesugaring
+  - MultiParamTypeClasses
+  - MultiWayIf
+  - NamedFieldPuns
+  - OverloadedStrings
+  - PartialTypeSignatures
+  - PatternGuards
+  - PolyKinds
+  - RankNTypes
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TupleSections
+  - TypeApplications
+  - TypeFamilies
+  - TypeOperators
+  - TypeSynonymInstances
+  - ViewPatterns
