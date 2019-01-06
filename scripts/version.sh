@@ -1,19 +1,6 @@
-#!/bin/sh
-PRG="$0"
-# Need this for relative symlinks.
-while [ -h "$PRG" ] ; do
-    ls=`ls -ld "$PRG"`
-    link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '/.*' > /dev/null; then
-        PRG="$link"
-    else
-        PRG=`dirname "$PRG"`"/$link"
-    fi
-done
-
+#!/bin/bash
+PRG=`readlink "$0"`
 ROOT=`dirname "$PRG"`
-ROOT=`cd "$ROOT/..";pwd`
-
 cd "$ROOT"
 
 if echo "$1" | grep -vq '[0-9][0-9]*\(\.[0-9][0-9]*\)*' ; then
@@ -21,6 +8,7 @@ if echo "$1" | grep -vq '[0-9][0-9]*\(\.[0-9][0-9]*\)*' ; then
   exit 1
 fi
 
-pkg=yam
-sed -i.bak "s|version:\(  *\)[0-9][0-9]*\(\.[0-9][0-9]*\)*|version:\1$1|" $pkg.cabal
-rm -f $pkg.cabal.bak
+for pkg in `ls -d yam*`; do
+  sed -i.bak "s|^version:\(  *\)[0-9][0-9]*\(\.[0-9][0-9]*\)*|version:\1$1|" $pkg/package.yaml
+  rm -f $pkg/package.yaml.bak
+done

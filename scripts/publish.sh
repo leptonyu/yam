@@ -1,19 +1,6 @@
-#!/bin/sh
-PRG="$0"
-# Need this for relative symlinks.
-while [ -h "$PRG" ] ; do
-    ls=`ls -ld "$PRG"`
-    link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '/.*' > /dev/null; then
-        PRG="$link"
-    else
-        PRG=`dirname "$PRG"`"/$link"
-    fi
-done
-
+#!/bin/bash
+PRG=`readlink "$0"`
 ROOT=`dirname "$PRG"`
-ROOT=`cd "$ROOT/..";pwd`
-
 cd "$ROOT"
 
 if [ -z "$HACKAGE_USER" -o -z "$HACKAGE_PASS" ]; then
@@ -28,11 +15,13 @@ if [ "$update" -gt 0 ]; then
   exit 1
 fi
 
+function action(){
+  stack haddock
+  pkg=.
+  stack sdist $pkg && stack upload $pkg
+  hup docboth -u $HACKAGE_USER -p $HACKAGE_PASS 
+}
 
-stack haddock
-
-pkg=.
-
-stack sdist $pkg && stack upload $pkg
-hup docboth -u $HACKAGE_USER -p $HACKAGE_PASS
-
+for module in `ls -d yam*`; do 
+  (cd $ROOT/$module; action)
+done
