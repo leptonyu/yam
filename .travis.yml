@@ -25,3 +25,5 @@ ghc:
 env:
   - PACKAGEDIR="yam"
   - PACKAGEDIR="yam-datasource"
+
+before_install: cd ${PACKAGEDIR}
