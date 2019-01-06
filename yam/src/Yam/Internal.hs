@@ -12,6 +12,7 @@ module Yam.Internal(
   -- * Utilities
   , throwS
   , readConf
+  , getLogger
   ) where
 
 import           Control.Exception          hiding (Handler)
@@ -21,6 +22,7 @@ import qualified Data.Vault.Lazy            as L
 import           GHC.Stack
 import           Network.Wai.Handler.Warp   (run)
 import           Servant.Swagger
+import           System.IO.Unsafe           (unsafePerformIO)
 import           Yam.Logger
 import           Yam.Swagger
 import           Yam.Trace
@@ -40,6 +42,19 @@ throwS e msg = do
   logErrorCS ?callStack msg
   lift $ throw e
 
+{-# NOINLINE loggerKey #-}
+loggerKey :: Key LogFunc
+loggerKey = unsafePerformIO newKey
+
+getLogger :: Env -> Maybe LogFunc
+getLogger env =
+  let trace :: Maybe TraceLog = getAttr traceKey  env
+      logger :: Maybe LogFunc = getAttr loggerKey env
+      {-# INLINE nlf #-}
+      nlf x (Just t) = addTrace x t
+      nlf x _        = x
+  in (`nlf` trace) <$> logger
+
 startYam
   :: forall api. (HasSwagger api, HasServer api '[Env])
   => AppConfig
@@ -54,7 +69,7 @@ startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableTrace middlewares
   = withLogger name logConfig $ do
       logInfo $ "Start Service [" <> name <> "] ..."
       logger <- askLoggerIO
-      (runAM $ foldr1 (<>) (traceMiddleware enableTrace : middlewares)) (Env L.empty Nothing ac) $ \(env, middleware) -> do
+      (runAM $ foldr1 (<>) (traceMiddleware enableTrace : middlewares)) (Env (L.insert loggerKey logger L.empty) Nothing ac) $ \(env, middleware) -> do
         let cxt                  = env :. EmptyContext
             pCxt                 = Proxy :: Proxy '[Env]
             portText             = showText port
@@ -73,12 +88,7 @@ runRequest p pc a v = hoistServerWithContext p pc go a
   where
     {-# INLINE go #-}
     go :: App a -> App a
-    go b = do
-      let trace :: Maybe TraceLog = L.lookup traceKey v
-      withAppM (\(env,lf) -> (env { reqAttributes = Just v}, nlf lf trace)) b
-    {-# INLINE nlf #-}
-    nlf x (Just t) = addTrace x t
-    nlf x _        = x
+    go = withAppM (\(env,lf) -> let env' = env { reqAttributes = Just v} in (env', fromMaybe lf $ getLogger env'))
 
 readConf :: (Default a, S.FromProperties a) => Text -> S.Properties -> a
 readConf k p = fromMaybe def $ S.lookup k p
