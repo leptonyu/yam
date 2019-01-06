@@ -16,32 +16,27 @@ ghc-options: -Wall -optP-Wno-nonportable-include-path -Wcompat -Wincomplete-reco
 dependencies:
   - base >= 4.7 && < 5
   - text
-  - resourcet
-  - conduit
-  - persistent
+  - bytestring
+  - aeson
+  - mtl
   - unliftio-core
+  - reflection
+  - data-default
+  - vault
+  - random
   - monad-logger
   - fast-logger
-  - aeson
-  - resource-pool
-  - vault
   - wai
-  - random
+  - warp
   - servant-server
-  - bytestring
   - servant-swagger
   - servant-swagger-ui
-  - reflection
-  - warp
-  - mtl
-  - data-default
   - salak
 
 library:
   source-dirs: src
   exposed-modules:
     - Yam
-    - Yam.DataSource
     - Yam.Internal
   other-modules:
     - Yam.Types
@@ -57,8 +52,6 @@ executables:
       - yam
       - servant-server
       - mtl
-      - time
-      - persistent-sqlite
       - wai-extra
 
 tests:

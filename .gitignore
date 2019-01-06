@@ -31,5 +31,6 @@ report.html
 app.yaml
 
 .vscode
+*.bak
 
 # End of https://www.gitignore.io/api/haskell
