@@ -1,5 +1,8 @@
 # yam
 
+[![Hackage](https://img.shields.io/badge/hackage-v0.5.0-orange.svg)](https://hackage.haskell.org/package/yam)
+[![Build Status](https://travis-ci.org/leptonyu/yam.svg?branch=master)](https://travis-ci.org/leptonyu/yam)
+
 Servant based Web Wrapper for Production in Haskell.
 
 
