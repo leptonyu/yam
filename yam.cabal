@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fd195beecd33a3fbfe13185719e1f49faff1b69e2012bfff0d4b343fc288a5a4
+-- hash: f9fe2bcda9477157917b0e18eb2cc0dedfe7d1737dda59d00077e97f6f8b0882
 
 name:           yam
-version:        0.4.0
+version:        0.5.0
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam#readme
@@ -24,13 +24,13 @@ extra-source-files:
 library
   exposed-modules:
       Yam
+      Yam.DataSource
       Yam.Internal
   other-modules:
       Yam.Types
       Yam.Logger
       Yam.Swagger
       Yam.Trace
-      Yam.DataSource
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns

@@ -17,5 +17,5 @@ traceMw app req resH = do
   let h = ("X-TRACE-ID",encodeUtf8 traceId)
   app req {vault = L.insert traceKey traceId (vault req)} (resH . mapResponseHeaders (h:))
 
-traceMiddleware :: AppMiddleware
-traceMiddleware = AppMiddleware $ \env f -> f (env, traceMw)
+traceMiddleware :: Bool -> AppMiddleware
+traceMiddleware enabled = simpleWebMiddleware (enabled, "Trace") traceMw

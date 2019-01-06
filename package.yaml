@@ -1,5 +1,5 @@
 name:                yam
-version:             0.4.0
+version:             0.5.0
 synopsis:            Yam Web
 #description:
 homepage:            https://github.com/leptonyu/yam#readme
@@ -41,13 +41,13 @@ library:
   source-dirs: src
   exposed-modules:
     - Yam
+    - Yam.DataSource
     - Yam.Internal
   other-modules:
     - Yam.Types
     - Yam.Logger
     - Yam.Swagger
     - Yam.Trace
-    - Yam.DataSource
 
 executables:
   yam:

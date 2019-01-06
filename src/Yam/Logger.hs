@@ -1,4 +1,5 @@
 module Yam.Logger(
+  -- * Logger Function
     withLogger
   , addTrace
   , LogConfig(..)

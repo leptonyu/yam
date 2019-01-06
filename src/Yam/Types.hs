@@ -1,26 +1,34 @@
+{-# LANGUAGE ImplicitParams #-}
 module Yam.Types(
+  -- * Environment
     AppConfig(..)
   , Env(..)
   , AppEnv
   , getAttr
   , setAttr
   , reqAttr
-  , AppMiddleware(..)
-  , Middleware
-  , Request(..)
+  -- * AppM Monad
   , AppM
-  , LogFunc
-  , defJson
   , runAppM
   , withAppM
   , askApp
   , askAttr
   , withAttr
   , requireAttr
-  , Key
-  , newKey
+  -- * Application Middleware
+  , AppMiddleware(..)
+  , simpleAppMiddleware
+  , simpleWebMiddleware
+  -- * Utilities
+  , LogFunc
   , randomString
   , showText
+  , defJson
+  -- * Reexport Functions
+  , Key
+  , newKey
+  , Middleware
+  , Request(..)
   , lift
   , when
   , Default(..)
@@ -47,6 +55,7 @@ import           Data.Text.Encoding             (encodeUtf8)
 import           Data.Vault.Lazy                (Key, newKey)
 import qualified Data.Vault.Lazy                as L
 import           Data.Word
+import           GHC.Stack
 import           Network.Wai
 import           Numeric
 import           Servant
@@ -91,13 +100,6 @@ setAttr k v Env{..} = case reqAttributes of
 type AppM m = LoggingT (ReaderT Env m)
 type AppEnv = (Env, LogFunc)
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
-newtype AppMiddleware = AppMiddleware {runAM :: Env -> ((Env, Middleware)-> LoggingT IO ()) -> LoggingT IO ()}
-
-instance Semigroup AppMiddleware where
-  (AppMiddleware am) <> (AppMiddleware bm) = AppMiddleware $ \e f -> am e $ \(e', mw) -> bm e' $ \(e'',mw') -> f (e'', mw . mw')
-
-instance Monoid AppMiddleware where
-  mempty = AppMiddleware $ \a f -> f (a,id)
 
 runAppM :: LogFunc -> Env -> AppM m a -> m a
 runAppM lf env a = runReaderT (runLoggingT a lf) env
@@ -121,8 +123,33 @@ askAttr = asks . getAttr
 withAttr :: MonadIO m => Key a -> a -> AppM m b -> AppM m b
 withAttr k v = withAppM (\(env,lf) -> (setAttr k v env, lf))
 
--- | Utility
+-- | Application Middleware
+newtype AppMiddleware = AppMiddleware {runAM :: Env -> ((Env, Middleware)-> LoggingT IO ()) -> LoggingT IO ()}
 
+instance Semigroup AppMiddleware where
+  (AppMiddleware am) <> (AppMiddleware bm) = AppMiddleware $ \e f -> am e $ \(e', mw) -> bm e' $ \(e'',mw') -> f (e'', mw . mw')
+
+instance Monoid AppMiddleware where
+  mempty = AppMiddleware $ \a f -> f (a,id)
+
+-- | Simple AppMiddleware
+simpleAppMiddleware :: HasCallStack => (Bool, Text) -> Key a -> a -> AppMiddleware
+simpleAppMiddleware (enabled,amname) k v =
+  if enabled
+    then AppMiddleware $ \e f -> do
+      logInfoCS ?callStack $ amname <> " enabled"
+      f (setAttr k v e, id)
+    else mempty
+
+simpleWebMiddleware :: HasCallStack => (Bool, Text) -> Middleware -> AppMiddleware
+simpleWebMiddleware (enabled,amname) m =
+  if enabled
+    then AppMiddleware $ \e f -> do
+      logInfoCS ?callStack $ amname <> " enabled"
+      f (e,m)
+    else mempty
+
+-- | Utility
 {-# INLINE randomString #-}
 randomString :: Int -> IO Text
 randomString n = do

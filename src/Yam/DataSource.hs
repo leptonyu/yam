@@ -1,10 +1,17 @@
 module Yam.DataSource(
-    DataSourceConfig(..)
-  , DataSourceProvider
+  -- * DataSource Types
+    DataSourceProvider
+  , DataSource
+  , DB
+  -- * Primary DataSource Functions
+  , runTrans
+  , primaryDatasourceMiddleware
+  -- * Secondary DataSource Functions
+  , runTransWith
+  , datasourceMiddleware
+  -- * Sql Functions
   , query
   , selectValue
-  , runTrans
-  , datasourceMiddleware
   ) where
 
 import           Control.Exception       (bracket)
@@ -17,29 +24,13 @@ import           Database.Persist.Sql    hiding (Key)
 import           System.IO.Unsafe        (unsafePerformIO)
 import           Yam.Types               hiding (LogFunc)
 
-data DataSourceConfig = DataSourceConfig
-  { url        :: Text
-  , maxThreads :: Int
-  } deriving (Eq, Show)
-
-instance FromJSON DataSourceConfig where
-  parseJSON = withObject "DataSourceConfig" $ \v -> DataSourceConfig
-    <$> v .:? "url"         .!= ":memory:"
-    <*> v .:? "max-threads" .!= 10
-
-instance Default DataSourceConfig where
-  def = defJson
-
-data DataSource = DataSource
-  { config :: DataSourceConfig
-  , pool   :: ConnectionPool
-  }
+type DataSource = ConnectionPool
 
 {-# NOINLINE dataSourceKey #-}
 dataSourceKey :: Key DataSource
 dataSourceKey = unsafePerformIO newKey
 
-type DataSourceProvider = LoggingT IO ConnectionPool
+type DataSourceProvider = LoggingT IO DataSource
 -- SqlPersistT ~ ReaderT SqlBackend
 type DB = SqlPersistT
 
@@ -55,22 +46,26 @@ query sql params = do
 selectValue :: (PersistField a, MonadUnliftIO m) => Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
+runTransWith :: (MonadUnliftIO m) => Key DataSource -> DB (AppM m) a -> AppM m a
+runTransWith k a = requireAttr k >>= (`runDB` a)
+
 runTrans :: (MonadUnliftIO m) => DB (AppM m) a -> AppM m a
-runTrans a = requireAttr dataSourceKey >>= (`runDB` a)
+runTrans = runTransWith dataSourceKey
 
 {-# INLINE runDB #-}
 runDB :: (MonadLoggerIO m, MonadUnliftIO m) => DataSource -> DB m a -> m a
-runDB DataSource{..} db = do
+runDB pool db = do
   logger <- askLoggerIO
   withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn db c { connLogFunc = logger }
 
 {-# INLINE runInDB #-}
-runInDB :: LogFunc -> DataSourceProvider -> DataSourceConfig -> (DataSource -> IO a) -> IO a
-runInDB logfunc f config g = bracket (runLoggingT f logfunc) destroyAllResources (\pool -> g DataSource{..})
+runInDB :: LogFunc -> DataSourceProvider -> (DataSource -> IO a) -> IO a
+runInDB logfunc f g = bracket (runLoggingT f logfunc) destroyAllResources g
 
-datasourceMiddleware :: DataSourceConfig -> DataSourceProvider -> AppMiddleware
-datasourceMiddleware dsc dsp = AppMiddleware $ \env f -> do
+datasourceMiddleware :: Key DataSource -> DataSourceProvider -> AppMiddleware
+datasourceMiddleware k dsp = AppMiddleware $ \env f -> do
   lf <- askLoggerIO
   logInfo "Datasource Initialized..."
-  liftIO $ runInDB lf dsp dsc $ \ds -> runLoggingT (f (setAttr dataSourceKey ds env, id)) lf
+  liftIO $ runInDB lf dsp $ \ds -> runLoggingT (f (setAttr k ds env, id)) lf
 
+primaryDatasourceMiddleware = datasourceMiddleware dataSourceKey
