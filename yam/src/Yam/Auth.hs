@@ -39,7 +39,7 @@ instance (HasSwagger api, ToParamSchema principal) => HasSwagger (CheckAuth prin
     & addParam param
     where
       param = mempty
-        & name     .~ "Authorization"
+        & Data.Swagger.name .~ "Authorization"
         & required ?~ True
         & schema .~ ParamOther (mempty
             & in_ .~ ParamHeader
