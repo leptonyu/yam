@@ -3,7 +3,7 @@ module Main where
 import           Control.Monad.Logger.CallStack
 import qualified Data.Salak                     as S
 import           Network.HTTP.Types
-import           Paths_yam                      (version)
+import           Paths_example                  (version)
 import           Servant
 import           Yam
 

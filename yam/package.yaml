@@ -47,15 +47,6 @@ library:
     - Yam.Swagger
     - Yam.Trace
 
-executables:
-  yam:
-    source-dirs:      demo
-    main:             Main.hs
-    dependencies:
-      - yam
-      - servant-server
-      - mtl
-
 tests:
   spec:
     main: Spec.hs

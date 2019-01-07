@@ -33,9 +33,7 @@ resolver: lts-13.1
 #  - auto-update
 #  - wai
 packages:
-- yam
-- yam-datasource
-- example
+- .
 # Dependency packages to be pulled from upstream that are not in the resolver
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
@@ -64,8 +62,3 @@ packages:
 #
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
-pvp-bounds: both
-nix:
-  packages:
-  - zlib
-  - lzma

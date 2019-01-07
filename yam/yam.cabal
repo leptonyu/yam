@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8345c599f6d1421794c9b4c5b387798dc0f90cb7ffb3896b78afda297720594a
+-- hash: 222a5a01992d082c951fd5ab29b877df9d2e56b262ed2dca46c798edf388a626
 
 name:           yam
 version:        0.5.3
@@ -57,39 +57,6 @@ library
     , vault
     , wai
     , warp
-  default-language: Haskell2010
-
-executable yam
-  main-is: Main.hs
-  other-modules:
-      Paths_yam
-  hs-source-dirs:
-      demo
-  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
-  build-depends:
-      aeson
-    , base >=4.7 && <5
-    , bytestring
-    , data-default
-    , fast-logger
-    , http-types
-    , lens
-    , monad-logger
-    , mtl
-    , random
-    , reflection
-    , salak
-    , servant-server
-    , servant-swagger
-    , servant-swagger-ui
-    , swagger2
-    , text
-    , unliftio-core
-    , vault
-    , wai
-    , warp
-    , yam
   default-language: Haskell2010
 
 test-suite spec
