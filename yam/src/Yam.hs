@@ -1,7 +1,7 @@
 module Yam(
     module Yam.Internal
-  -- , module Yam.DataSource
+  , module Yam.Auth
   ) where
 
--- import           Yam.DataSource
+import           Yam.Auth
 import           Yam.Internal

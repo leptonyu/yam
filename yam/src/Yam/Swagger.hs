@@ -1,7 +1,9 @@
 {-# LANGUAGE NoPolyKinds #-}
 module Yam.Swagger where
 
+import           Control.Lens       hiding (Context)
 import           Data.Reflection
+import           Data.Swagger       hiding (name, port)
 import           GHC.TypeLits
 import           Servant.Swagger
 import           Servant.Swagger.UI
@@ -27,11 +29,13 @@ type SAPI dir schema api = SwaggerSchemaUI dir schema :<|> api
 serveWithContextAndSwagger
   :: (HasSwagger api, HasServer api context)
   => SwaggerConfig
+  -> AppConfig
+  -> Version
   -> Proxy api
   -> Context context
   -> ServerT api Handler
   -> Application
-serveWithContextAndSwagger SwaggerConfig{..} proxy cxt api =
+serveWithContextAndSwagger SwaggerConfig{..} AppConfig{..} versions proxy cxt api =
     if enabled
       then reifySymbol urlDir $ \pd -> reifySymbol urlSchema $ \ps -> go (pd,ps) proxy cxt api
       else serveWithContext proxy cxt api
@@ -46,4 +50,9 @@ serveWithContextAndSwagger SwaggerConfig{..} proxy cxt api =
     g2 :: (Proxy d, Proxy s) -> Proxy (SAPI d s api)
     g2 _ = Proxy
     g3 :: HasSwagger api => Proxy api -> Server api -> Proxy (SAPI d s api) -> Server (SAPI d s api)
-    g3 p a _ = swaggerSchemaUIServer (toSwagger p) :<|> a
+    g3 p a _ = swaggerSchemaUIServer (g4 $ toSwagger p) :<|> a
+    g4 s = s
+      & info .~ (mempty
+          & title   .~ (name <> " API Documents")
+          & version .~ pack (showVersion versions))
+      & host ?~ Host "http://localhost" (Just $ fromIntegral port)

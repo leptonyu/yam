@@ -1,13 +1,20 @@
+{-# LANGUAGE ImplicitParams #-}
 module Yam.Logger(
   -- * Logger Function
     withLogger
-  , addTrace
+  , setLogger
+  , setExtendLog
+  , extensionLogKey
+  , throwS
   , LogConfig(..)
   ) where
 
-import           Control.Exception     (bracket)
+import           Control.Exception     (bracket, throw)
 import           Control.Monad         (when)
+import           Control.Monad.Reader
 import qualified Data.Text             as T
+import           GHC.Stack
+import           System.IO.Unsafe      (unsafePerformIO)
 import           System.Log.FastLogger
 import           Yam.Types
 
@@ -66,3 +73,39 @@ withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT ac
 
 addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = f a b c ("[" <> toLogStr tid <> "] " <> d)
+
+{-# NOINLINE loggerKey #-}
+loggerKey :: Key LogFunc
+loggerKey = unsafePerformIO newKey
+
+{-# NOINLINE extensionLogKey #-}
+extensionLogKey :: Key Text
+extensionLogKey = unsafePerformIO newKey
+
+setExtendLog :: (Text -> Text) -> Env -> Env
+setExtendLog f env = let mt = fromMaybe "" $ getAttr extensionLogKey env in setAttr extensionLogKey (f mt) env
+
+setLogger :: LogFunc -> Env -> Env
+setLogger = setAttr loggerKey
+
+getLogger :: Env -> LogFunc
+getLogger env =
+  let trace  :: Maybe Text    = getAttr extensionLogKey  env
+      logger :: Maybe LogFunc = getAttr loggerKey env
+      {-# INLINE nlf #-}
+      nlf x (Just t) = addTrace x t
+      nlf x _        = x
+  in maybe (\_ _ _ _ -> return ()) (`nlf` trace) logger
+
+instance MonadIO m => MonadLogger (AppM m) where
+  monadLoggerLog a b c d = do
+    env <- ask
+    liftIO $ getLogger env a b c $ toLogStr d
+
+instance (MonadIO m) => MonadLoggerIO (AppM m) where
+  askLoggerIO = asks getLogger
+
+throwS :: (HasCallStack, MonadIO m) => ServantErr -> Text -> AppM m a
+throwS e msg = do
+  logErrorCS ?callStack msg
+  lift $ throw e

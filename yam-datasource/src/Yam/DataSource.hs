@@ -60,7 +60,7 @@ runDB pool db = do
 
 {-# INLINE runInDB #-}
 runInDB :: LogFunc -> DataSourceProvider -> (DataSource -> IO a) -> IO a
-runInDB logfunc f g = bracket (runLoggingT f logfunc) destroyAllResources g
+runInDB logfunc f = bracket (runLoggingT f logfunc) destroyAllResources
 
 datasourceMiddleware :: Key DataSource -> DataSourceProvider -> AppMiddleware
 datasourceMiddleware k dsp = AppMiddleware $ \env f -> do

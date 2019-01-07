@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 69a0b52b0ace4cd47a5ffe6bb2fa9933035c2a4f0cc8fe8b2cb33438329c9f49
+-- hash: 8345c599f6d1421794c9b4c5b387798dc0f90cb7ffb3896b78afda297720594a
 
 name:           yam
 version:        0.5.3
@@ -25,6 +25,7 @@ library
   exposed-modules:
       Yam
       Yam.Internal
+      Yam.Auth
   other-modules:
       Yam.Types
       Yam.Logger
@@ -40,6 +41,8 @@ library
     , bytestring
     , data-default
     , fast-logger
+    , http-types
+    , lens
     , monad-logger
     , mtl
     , random
@@ -48,7 +51,9 @@ library
     , servant-server
     , servant-swagger
     , servant-swagger-ui
+    , swagger2
     , text
+    , unliftio-core
     , vault
     , wai
     , warp
@@ -68,6 +73,8 @@ executable yam
     , bytestring
     , data-default
     , fast-logger
+    , http-types
+    , lens
     , monad-logger
     , mtl
     , random
@@ -76,7 +83,9 @@ executable yam
     , servant-server
     , servant-swagger
     , servant-swagger-ui
+    , swagger2
     , text
+    , unliftio-core
     , vault
     , wai
     , warp
@@ -88,6 +97,7 @@ test-suite spec
   main-is: Spec.hs
   other-modules:
       Yam
+      Yam.Auth
       Yam.Internal
       Yam.Logger
       Yam.Swagger
@@ -107,6 +117,8 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
+    , http-types
+    , lens
     , monad-logger
     , mtl
     , random
@@ -115,7 +127,9 @@ test-suite spec
     , servant-server
     , servant-swagger
     , servant-swagger-ui
+    , swagger2
     , text
+    , unliftio-core
     , vault
     , wai
     , warp

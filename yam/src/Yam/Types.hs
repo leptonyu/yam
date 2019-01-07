@@ -3,7 +3,6 @@ module Yam.Types(
   -- * Environment
     AppConfig(..)
   , Env(..)
-  , AppEnv
   , getAttr
   , setAttr
   , reqAttr
@@ -35,6 +34,7 @@ module Yam.Types(
   , Text
   , pack
   , encodeUtf8
+  , decodeUtf8
   , MonadIO
   , liftIO
   , withReaderT
@@ -43,17 +43,22 @@ module Yam.Types(
   , module Servant
   , module Data.Aeson
   , module Data.Word
+  , module Data.Function
+  , module Data.Version
   ) where
 
+import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
 import           Data.Aeson
 import           Data.Default
+import           Data.Function
 import           Data.Maybe
 import           Data.Text                      (Text, justifyRight, pack)
-import           Data.Text.Encoding             (encodeUtf8)
+import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                (Key, newKey)
 import qualified Data.Vault.Lazy                as L
+import           Data.Version
 import           Data.Word
 import           GHC.Stack
 import           Network.Wai
@@ -97,19 +102,25 @@ setAttr k v Env{..} = case reqAttributes of
   Just av -> Env attributes (Just $ L.insert k v av)     application
   _       -> Env (L.insert k v attributes) reqAttributes application
 
-type AppM m = LoggingT (ReaderT Env m)
-type AppEnv = (Env, LogFunc)
+newtype AppM m a = AppM { runAppM' :: ReaderT Env m a } deriving (Functor, Applicative, Monad, MonadTrans, MonadIO)
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
-runAppM :: LogFunc -> Env -> AppM m a -> m a
-runAppM lf env a = runReaderT (runLoggingT a lf) env
+runAppM :: Env -> AppM m a -> m a
+runAppM e a = runReaderT (runAppM' a) e
 
-withAppM :: MonadIO m => (AppEnv -> AppEnv) -> AppM m a -> AppM m a
+instance Monad m => MonadReader Env (AppM m) where
+  ask = AppM ask
+  local f (AppM a) = AppM $ local f a
+
+instance MonadUnliftIO m => MonadUnliftIO (AppM m) where
+  withRunInIO f = do
+    env <- ask
+    lift $ withRunInIO (\g -> f $ g . runAppM env)
+
+withAppM :: MonadIO m => (Env -> Env) -> AppM m a -> AppM m a
 withAppM f a = do
-  lf  <- askLoggerIO
   env <- ask
-  let (e,l) = f (env,lf)
-  lift . lift $ runAppM l e a
+  lift $ runAppM (f env) a
 
 askApp :: Monad m => AppM m AppConfig
 askApp = asks application
@@ -121,7 +132,7 @@ askAttr :: MonadIO m => Key a -> AppM m (Maybe a)
 askAttr = asks . getAttr
 
 withAttr :: MonadIO m => Key a -> a -> AppM m b -> AppM m b
-withAttr k v = withAppM (\(env,lf) -> (setAttr k v env, lf))
+withAttr k v = withAppM (setAttr k v)
 
 -- | Application Middleware
 newtype AppMiddleware = AppMiddleware {runAM :: Env -> ((Env, Middleware)-> LoggingT IO ()) -> LoggingT IO ()}
@@ -159,3 +170,4 @@ randomString n = do
 {-# INLINE showText #-}
 showText :: Show a => a -> Text
 showText = pack . show
+
