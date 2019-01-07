@@ -4,7 +4,6 @@ module Yam.Internal(
   -- * Application Functions
     startYam
   , start
-  , App
   , module Yam.Logger
   , module Yam.Types
   , SwaggerConfig(..)
@@ -22,8 +21,6 @@ import           Yam.Logger
 import           Yam.Swagger
 import           Yam.Trace
 import           Yam.Types
-
-type App = AppM IO
 
 runApp :: Env -> App a -> Handler a
 runApp b c = do
@@ -47,7 +44,7 @@ startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableTrace vs middlewa
   = withLogger name logConfig $ do
       logInfo $ "Start Service [" <> name <> "] ..."
       logger <- askLoggerIO
-      let act = runAM $ foldr1 (<>) (traceMiddleware enableTrace : middlewares)
+      let act = runAM $ foldr1 (<>) (traceMiddleware enableTrace (\_ -> return ()) : middlewares)
       act (setLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
         let cxt                  = env :. EmptyContext
             pCxt                 = Proxy :: Proxy '[Env]

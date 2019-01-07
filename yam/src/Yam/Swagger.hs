@@ -55,4 +55,4 @@ serveWithContextAndSwagger SwaggerConfig{..} AppConfig{..} versions proxy cxt ap
       & info .~ (mempty
           & title   .~ (name <> " API Documents")
           & version .~ pack (showVersion versions))
-      & host ?~ Host "http://localhost" (Just $ fromIntegral port)
+      & host ?~ Host "localhost" (Just $ fromIntegral port)

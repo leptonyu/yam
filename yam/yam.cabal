@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4cb815222665b4947e5ef1bc71499cc62ab13687ba4ac40e2862cd3ece317beb
+-- hash: e23787ccf16d1d53774e3e6cdf88654b07650fb22037b0520dee9d427b0ea5dc
 
 name:           yam
 version:        0.5.4
@@ -31,6 +31,10 @@ library
       Yam.Logger
       Yam.Swagger
       Yam.Trace
+      Data.Opentracing
+      Data.Opentracing.Types
+      Data.Opentracing.Tracer
+      Data.Opentracing.Simple
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
@@ -48,12 +52,15 @@ library
     , random
     , reflection
     , salak
+    , scientific
     , servant-server
     , servant-swagger
     , servant-swagger-ui
     , swagger2
     , text
+    , time
     , unliftio-core
+    , unordered-containers
     , vault
     , wai
     , warp
@@ -63,6 +70,10 @@ test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Data.Opentracing
+      Data.Opentracing.Simple
+      Data.Opentracing.Tracer
+      Data.Opentracing.Types
       Yam
       Yam.Auth
       Yam.Internal
@@ -91,12 +102,15 @@ test-suite spec
     , random
     , reflection
     , salak
+    , scientific
     , servant-server
     , servant-swagger
     , servant-swagger-ui
     , swagger2
     , text
+    , time
     , unliftio-core
+    , unordered-containers
     , vault
     , wai
     , warp

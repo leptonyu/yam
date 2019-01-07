@@ -18,6 +18,9 @@ dependencies:
   - bytestring
   - aeson
   - mtl
+  - time
+  - scientific
+  - unordered-containers
   - unliftio-core
   - lens
   - reflection
@@ -46,6 +49,11 @@ library:
     - Yam.Logger
     - Yam.Swagger
     - Yam.Trace
+
+    - Data.Opentracing
+    - Data.Opentracing.Types
+    - Data.Opentracing.Tracer
+    - Data.Opentracing.Simple
 
 tests:
   spec:

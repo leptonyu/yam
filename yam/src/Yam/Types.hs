@@ -10,6 +10,7 @@ module Yam.Types(
   , AppM
   , runAppM
   , withAppM
+  , App
   , askApp
   , askAttr
   , withAttr
@@ -104,6 +105,7 @@ setAttr k v Env{..} = case reqAttributes of
 
 newtype AppM m a = AppM { runAppM' :: ReaderT Env m a } deriving (Functor, Applicative, Monad, MonadTrans, MonadIO)
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+type App = AppM IO
 
 runAppM :: Env -> AppM m a -> m a
 runAppM e a = runReaderT (runAppM' a) e
