@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 75101ae58e41d7c69e953804985aba4d74089f967d185048f7114cf17fc69525
+-- hash: 62755a0e5aa26eb505c56005ad199e41028b2f17c9311b1540692c6bea273579
 
 name:           example
 version:        0.1.0.0
@@ -31,7 +31,6 @@ executable yam
       base >=4.7 && <5
     , http-types
     , monad-logger
-    , mtl
     , salak
     , servant-server
     , yam

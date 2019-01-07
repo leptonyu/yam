@@ -1,6 +1,6 @@
 module Yam.DataSource(
   -- * DataSource Types
-    DataSourceProvider
+    DataSourceProvider(..)
   , DataSource
   , DB
   -- * Primary DataSource Functions
@@ -30,7 +30,11 @@ type DataSource = ConnectionPool
 dataSourceKey :: Key DataSource
 dataSourceKey = unsafePerformIO newKey
 
-type DataSourceProvider = LoggingT IO DataSource
+data DataSourceProvider = DataSourceProvider
+  { datasource :: LoggingT IO DataSource
+  , migration  :: DB (LoggingT IO) ()
+  , dbtype     :: Text
+  }
 -- SqlPersistT ~ ReaderT SqlBackend
 type DB = SqlPersistT
 
@@ -60,12 +64,18 @@ runDB pool db = do
 
 {-# INLINE runInDB #-}
 runInDB :: LogFunc -> DataSourceProvider -> (DataSource -> IO a) -> IO a
-runInDB logfunc f = bracket (runLoggingT f logfunc) destroyAllResources
+runInDB logfunc DataSourceProvider{..} action =
+  bracket (runLoggingT datasource logfunc) destroyAllResources $ \ds -> do
+    runLoggingT (runDB ds migration) logfunc
+    action ds
 
 datasourceMiddleware :: Key DataSource -> DataSourceProvider -> AppMiddleware
 datasourceMiddleware k dsp = AppMiddleware $ \env f -> do
   lf <- askLoggerIO
-  logInfo "Datasource Initialized..."
-  liftIO $ runInDB lf dsp $ \ds -> runLoggingT (f (setAttr k ds env, id)) lf
+  logInfo $ "Datasource " <> dbtype dsp <> " Initialized..."
+  liftIO  $ runInDB lf dsp $ \ds -> runLoggingT (f (setAttr k ds env, id)) lf
 
 primaryDatasourceMiddleware = datasourceMiddleware dataSourceKey
+
+
+
