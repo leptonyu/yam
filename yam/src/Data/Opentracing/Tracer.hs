@@ -2,6 +2,7 @@ module Data.Opentracing.Tracer(
     SpanName
   , newSpan
   , newChildSpan
+  , newSpan'
   , forkSpan
   , setReferences
   , setBaggage
@@ -43,7 +44,7 @@ newSpan name = do
 
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
-  spanId      <- newId
+  spanId      <- if null references then return (traceId context) else newId
   startTime   <- liftIO $ getCurrentTime
   let finishTime = Nothing
       tags       = HM.empty

@@ -34,17 +34,17 @@ startYam
   => AppConfig
   -> SwaggerConfig
   -> LogConfig
-  -> Bool
+  -> TraceConfig
   -> Version
   -> [AppMiddleware]
   -> Proxy api
   -> ServerT api App
   -> IO ()
-startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableTrace vs middlewares proxy server
+startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig traceConfig vs middlewares proxy server
   = withLogger name logConfig $ do
       logInfo $ "Start Service [" <> name <> "] ..."
       logger <- askLoggerIO
-      let act = runAM $ foldr1 (<>) (traceMiddleware enableTrace (\_ -> return ()) : middlewares)
+      let act = runAM $ foldr1 (<>) (traceMiddleware traceConfig : middlewares)
       act (setLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
         let cxt                  = env :. EmptyContext
             pCxt                 = Proxy :: Proxy '[Env]
@@ -81,4 +81,4 @@ start p = startYam
   (readConf "yam.application" p)
   (readConf "yam.swagger"     p)
   (readConf "yam.logging"     p)
-  (fromMaybe True $ S.lookup "yam.trace.enabled" p)
+  (readConf "yam.trace"       p)

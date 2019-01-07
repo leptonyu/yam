@@ -1,12 +1,49 @@
-module Yam.Trace where
+module Yam.Trace(
+    MonadTracer(..)
+  , MonadTracing(..)
+  , TraceConfig(..)
+  , hTraceId
+  , hParentTraceId
+  , hSpanId
+  , hSampled
+  , traceMiddleware
+  ) where
 
+import qualified Data.HashMap.Lazy  as HM
 import           Data.Opentracing
-import qualified Data.Vault.Lazy  as L
+import qualified Data.Text          as T
+import qualified Data.Vault.Lazy    as L
+import           Network.HTTP.Types
 import           Network.Wai
-import           System.IO.Unsafe (unsafePerformIO)
+import           System.IO.Unsafe   (unsafePerformIO)
 import           Yam.Logger
 import           Yam.Types
 
+data TraceConfig = TraceConfig
+  { enabled :: Bool
+  , method  :: TraceNotifyType
+  } deriving (Eq, Show)
+
+data TraceNotifyType
+  = NoTracer
+  deriving (Eq, Show)
+
+instance FromJSON TraceNotifyType where
+  parseJSON v = go . T.toLower <$> parseJSON v
+    where
+      go :: Text -> TraceNotifyType
+      go _ = NoTracer
+
+instance FromJSON TraceConfig where
+  parseJSON = withObject "TraceConfig" $ \v -> TraceConfig
+    <$> v .:? "enabled" .!= True
+    <*> v .:? "type"    .!= NoTracer
+
+instance Default TraceConfig where
+  def = TraceConfig True NoTracer
+
+notifier :: TraceNotifyType -> Span -> App ()
+notifier _ _ = return ()
 
 {-# NOINLINE spanContextKey #-}
 spanContextKey :: Key SpanContext
@@ -30,20 +67,52 @@ instance MonadIO m => MonadTracing (AppM m) where
     finishSpan n >>= notify
     return a
 
-traceMw :: Env -> (Span -> App ()) -> Middleware
-traceMw env notify app req resH = runAppM env $ runInSpan (fromMaybe "" $ listToMaybe $ pathInfo req) notify $ \s@Span{..} -> do
-  let SpanContext{..} = context
-      tid = traceId <> "/" <> spanId
-      h   = ("X-TRACE-ID",encodeUtf8 tid)
-      v   = L.insert extensionLogKey tid (vault req)
-      v'  = L.insert spanKey s v
-  liftIO $ app req {vault = v'} (resH . mapResponseHeaders (h:))
+hTraceId :: HeaderName
+hTraceId = "X-B3-TraceId"
 
-traceMiddleware :: Bool -> (Span -> App ()) -> AppMiddleware
-traceMiddleware enabled notify
+hParentTraceId :: HeaderName
+hParentTraceId = "X-B3-ParentSpanId"
+
+hSpanId :: HeaderName
+hSpanId = "X-B3-SpanId"
+
+hSampled :: HeaderName
+hSampled = "X-B3-Sampled"
+
+parseSpan :: RequestHeaders -> Env -> Env
+parseSpan headers env =
+  let sc = fromMaybe (SpanContext "" HM.empty) $ getAttr spanContextKey env
+  in case lookup hTraceId headers of
+      Just tid -> let sc' = sc { traceId = decodeUtf8 tid }
+                  in env & setAttr spanContextKey      sc'
+                         & go ( fromMaybe (traceId sc') $ decodeUtf8 <$> lookup hSpanId headers) sc'
+      _        -> env
+  where
+    go spanId context env' =
+      let name = "-"
+          startTime  = undefined
+          finishTime = Nothing
+          tags       = HM.empty
+          logs       = HM.empty
+          references = []
+      in setAttr spanKey Span{..} env'
+
+traceMw :: Env -> (Span -> App ()) -> Middleware
+traceMw env notify app req resH = runAppM (parseSpan (requestHeaders req) env) $
+  runInSpan (fromMaybe "" $ listToMaybe $ pathInfo req) notify $ \s@Span{..} -> do
+    let SpanContext{..} = context
+        tid = traceId <> "," <> spanId
+        v   = L.insert extensionLogKey tid (vault req)
+        v'  = L.insert spanKey s v
+    liftIO $ app req {vault = v'}
+      $ resH . mapResponseHeaders (\hs -> (hTraceId,encodeUtf8 traceId):(hSpanId, encodeUtf8 spanId):hs)
+
+traceMiddleware :: TraceConfig -> AppMiddleware
+traceMiddleware TraceConfig{..}
   = AppMiddleware $ \env f -> if enabled
     then do
       c <- newContext
       let env' = setAttr spanContextKey c env
-      f (env', traceMw env' notify)
+      f (env', traceMw env' $ notifier method)
     else f (env, id)
+
