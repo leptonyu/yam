@@ -1,13 +1,15 @@
-module Yam.Auth where
+module Yam.Middleware.Auth where
 import           Control.Lens
-import           Data.Default
 import           Data.Swagger
 import qualified Data.Vault.Lazy                            as L
+import           Servant
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Swagger
 import           Servant.Swagger.Internal
 import           System.IO.Unsafe                           (unsafePerformIO)
-import           Yam.Internal                               hiding (name)
+import           Yam.Logger
+import           Yam.Middleware
+import           Yam.Types
 
 data CheckAuth (principal :: *)
 
@@ -34,7 +36,7 @@ instance ( HasContextEntry context Env
       checker :: Request -> App principal
       checker = runCheckAuth $ reqAttr authKey env
       authCheck :: DelayedIO principal
-      authCheck = withRequest $ \req -> liftIO $ runAppM env { reqAttributes = Just (vault req)} (checker req)
+      authCheck = withRequest $ \req -> liftIO $ runApp env { reqAttributes = Just (vault req)} (checker req)
       -- Fix Origin `addAuthCheck`, add logger info
       addFixAuthCheck
         :: Delayed env (principal -> b)

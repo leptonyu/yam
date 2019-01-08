@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 62755a0e5aa26eb505c56005ad199e41028b2f17c9311b1540692c6bea273579
+-- hash: 6f6ac5bc7c1e84b485d6a0b58e772905bfe4219ac11f3ba09ad9a023161ca861
 
 name:           example
 version:        0.1.0.0
@@ -33,5 +33,7 @@ executable yam
     , monad-logger
     , salak
     , servant-server
+    , swagger2
+    , text
     , yam
   default-language: Haskell2010

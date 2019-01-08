@@ -45,7 +45,7 @@ newSpan name = do
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
   spanId      <- if null references then return (traceId context) else newId
-  startTime   <- liftIO $ getCurrentTime
+  startTime   <- liftIO getCurrentTime
   let finishTime = Nothing
       tags       = HM.empty
       logs       = HM.empty
@@ -73,7 +73,7 @@ setBaggage Span{..} k t =
 
 finishSpan :: MonadTracer m => Span -> m Span
 finishSpan Span{..} = do
-  ts <- liftIO $ getCurrentTime
+  ts <- liftIO getCurrentTime
   return Span {finishTime = Just ts, ..}
 
 newContext :: MonadIO m => m SpanContext

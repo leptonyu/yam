@@ -2,24 +2,19 @@
 module Yam.Swagger(
     SwaggerConfig(..)
   , serveWithContextAndSwagger
-  , module Data.Swagger
   , module Control.Lens
   ) where
 
-import           Control.Lens       hiding (Context, allOf)
+import           Control.Lens       hiding (Context, allOf, (.=))
 import           Data.Reflection
-import           Data.Swagger       hiding
-    ( Header
-    , Response
-    , name
-    , port
-    , version
-    )
+import           Data.Swagger       hiding (name, port)
 import qualified Data.Swagger       as S
 import           GHC.TypeLits
+import           Servant
 import           Servant.Swagger
 import           Servant.Swagger.UI
-import           Yam.Types
+import           Yam.Types.Env
+import           Yam.Types.Prelude
 
 data SwaggerConfig = SwaggerConfig
   { urlDir    :: String

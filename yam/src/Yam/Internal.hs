@@ -4,24 +4,18 @@ module Yam.Internal(
   -- * Application Functions
     startYam
   , start
-  , module Yam.Logger
-  , module Yam.Types
-  , SwaggerConfig(..)
-  -- * Utilities
-  , readConf
   ) where
 
-import           Control.Exception                  hiding (Handler)
 import qualified Data.ByteString.Lazy.Char8         as B
-import qualified Data.Salak                         as S
 import qualified Data.Vault.Lazy                    as L
-import           Network.Wai
 import           Network.Wai.Handler.Warp
+import           Servant
 import           Servant.Server.Internal.ServantErr
 import           Servant.Swagger
 import           Yam.Logger
+import           Yam.Middleware
+import           Yam.Middleware.Trace
 import           Yam.Swagger
-import           Yam.Trace
 import           Yam.Types
 
 whenException :: SomeException -> Response
@@ -53,38 +47,34 @@ startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig traceConfig vs middlewa
                                  & setPort port
                                  & setOnException (\_ _ -> return ())
                                  & setOnExceptionResponse whenException
-                                 -- & setLogger
         when enabled $
           logInfo $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
         logInfo $ "Servant started on port(s): " <> portText
         lift $ runSettings settings
           $ middleware
           $ serveWithContextAndSwagger sw ac vs proxy' cxt
-          $ hoistServerWithContext proxy' pCxt (runApp env) server'
+          $ hoistServerWithContext proxy' pCxt (transApp env) server'
 
 runRequest :: (HasServer api context) => Proxy api -> Proxy context -> ServerT api App -> Vault -> ServerT api App
 runRequest p pc a v = hoistServerWithContext p pc go a
   where
     {-# INLINE go #-}
     go :: App a -> App a
-    go = withAppM (\env -> env { reqAttributes = Just v})
+    go = local (\env -> env { reqAttributes = Just v})
 
-runApp :: Env -> App a -> Handler a
-runApp b c = liftIO $ runAppM b c
-
-readConf :: (Default a, S.FromProperties a) => Text -> S.Properties -> a
-readConf k p = fromMaybe def $ S.lookup k p
+transApp :: Env -> App a -> Handler a
+transApp b c = liftIO $ runApp b c
 
 start
   :: forall api. (HasSwagger api, HasServer api '[Env])
-  => S.Properties
+  => Properties
   -> Version
   -> [AppMiddleware]
   -> Proxy api
   -> ServerT api App
   -> IO ()
 start p = startYam
-  (readConf "yam.application" p)
-  (readConf "yam.swagger"     p)
-  (readConf "yam.logging"     p)
-  (readConf "yam.trace"       p)
+  (readConfig "yam.application" p)
+  (readConfig "yam.swagger"     p)
+  (readConfig "yam.logging"     p)
+  (readConfig "yam.trace"       p)

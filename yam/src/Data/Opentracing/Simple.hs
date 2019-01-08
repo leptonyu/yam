@@ -11,7 +11,7 @@ instance MonadIO m => MonadIO (TracerT m) where
   liftIO = TracerT . liftIO
 
 instance MonadIO m => MonadTracer (TracerT m) where
-  askSpanContext = TracerT $ snd <$> get
+  askSpanContext = TracerT $ gets snd
 
 instance MonadIO m => MonadTracing (TracerT m) where
   runInSpan name notify action = do

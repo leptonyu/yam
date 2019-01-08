@@ -43,13 +43,15 @@ library:
   exposed-modules:
     - Yam
     - Yam.Internal
-    - Yam.Auth
+    - Yam.Middleware
+    - Yam.Middleware.Auth
+    - Yam.Middleware.Trace
     - Yam.Swagger
-  other-modules:
     - Yam.Types
+    - Yam.Types.Prelude
+    - Yam.Types.Env
     - Yam.Logger
-    - Yam.Trace
-
+  other-modules:
     - Data.Opentracing
     - Data.Opentracing.Types
     - Data.Opentracing.Tracer

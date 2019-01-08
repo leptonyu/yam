@@ -1,13 +1,10 @@
 module Main where
 
-import           Control.Monad.Logger.CallStack
-import qualified Data.Salak                     as S
-import qualified Data.Text                      as T
-import           Network.HTTP.Types
-import           Paths_example                  (version)
+import           Data.Swagger  hiding (version)
+import qualified Data.Text     as T
+import           Paths_example (version)
 import           Servant
 import           Yam
-import           Yam.Swagger
 
 newtype User = User { user :: Text } deriving (Eq, Show)
 
@@ -54,8 +51,7 @@ errorService = logError "No" >> return "No"
 servantService :: App Text
 servantService = throwS err401 "Servant"
 
-
 main :: IO ()
 main = do
-  p <- S.defaultPropertiesWithFile "yam_test.yml"
+  p <- defaultPropertiesWithFile "yam_test.yml"
   start p version [authAppMiddleware checker] (Proxy :: Proxy UserApi) service

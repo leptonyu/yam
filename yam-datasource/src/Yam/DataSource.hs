@@ -50,10 +50,10 @@ query sql params = do
 selectValue :: (PersistField a, MonadUnliftIO m) => Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
-runTransWith :: (MonadUnliftIO m) => Key DataSource -> DB (AppM m) a -> AppM m a
+runTransWith :: Key DataSource -> DB App a -> App a
 runTransWith k a = requireAttr k >>= (`runDB` a)
 
-runTrans :: (MonadUnliftIO m) => DB (AppM m) a -> AppM m a
+runTrans :: DB App a -> App a
 runTrans = runTransWith dataSourceKey
 
 {-# INLINE runDB #-}

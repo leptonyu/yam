@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f6437884563447bffaac4f2d2d069dc6e62ff52e55924dc50208770986c8198
+-- hash: 064304bc73d6a444f579bb7f820cf7be967deb2cf52d45ed7f84f6f754100101
 
 name:           yam
 version:        0.5.4
@@ -25,12 +25,15 @@ library
   exposed-modules:
       Yam
       Yam.Internal
-      Yam.Auth
+      Yam.Middleware
+      Yam.Middleware.Auth
+      Yam.Middleware.Trace
       Yam.Swagger
-  other-modules:
       Yam.Types
+      Yam.Types.Prelude
+      Yam.Types.Env
       Yam.Logger
-      Yam.Trace
+  other-modules:
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer
@@ -75,12 +78,15 @@ test-suite spec
       Data.Opentracing.Tracer
       Data.Opentracing.Types
       Yam
-      Yam.Auth
       Yam.Internal
       Yam.Logger
+      Yam.Middleware
+      Yam.Middleware.Auth
+      Yam.Middleware.Trace
       Yam.Swagger
-      Yam.Trace
       Yam.Types
+      Yam.Types.Env
+      Yam.Types.Prelude
       Paths_yam
   hs-source-dirs:
       test

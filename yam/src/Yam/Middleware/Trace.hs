@@ -1,4 +1,4 @@
-module Yam.Trace(
+module Yam.Middleware.Trace(
     MonadTracer(..)
   , MonadTracing(..)
   , TraceConfig(..)
@@ -9,14 +9,13 @@ module Yam.Trace(
   , traceMiddleware
   ) where
 
-import qualified Data.HashMap.Lazy  as HM
+import qualified Data.HashMap.Lazy as HM
 import           Data.Opentracing
-import qualified Data.Text          as T
-import qualified Data.Vault.Lazy    as L
-import           Network.HTTP.Types
-import           Network.Wai
-import           System.IO.Unsafe   (unsafePerformIO)
+import qualified Data.Text         as T
+import qualified Data.Vault.Lazy   as L
+import           System.IO.Unsafe  (unsafePerformIO)
 import           Yam.Logger
+import           Yam.Middleware
 import           Yam.Types
 
 data TraceConfig = TraceConfig
@@ -53,10 +52,10 @@ spanContextKey = unsafePerformIO newKey
 spanKey :: Key Span
 spanKey = unsafePerformIO newKey
 
-instance MonadIO m => MonadTracer (AppM m) where
+instance MonadTracer App where
   askSpanContext = requireAttr spanContextKey
 
-instance MonadIO m => MonadTracing (AppM m) where
+instance MonadTracing App where
   runInSpan name notify action = do
     s <- askAttr spanKey
     n <- case s of
@@ -85,7 +84,7 @@ parseSpan headers env =
   in case lookup hTraceId headers of
       Just tid -> let sc' = sc { traceId = decodeUtf8 tid }
                   in env & setAttr spanContextKey      sc'
-                         & go ( fromMaybe (traceId sc') $ decodeUtf8 <$> lookup hSpanId headers) sc'
+                         & go (maybe (traceId sc') decodeUtf8 $ lookup hSpanId headers) sc'
       _        -> env
   where
     go spanId context env' =
@@ -98,8 +97,8 @@ parseSpan headers env =
       in setAttr spanKey Span{..} env'
 
 traceMw :: Env -> (Span -> App ()) -> Middleware
-traceMw env notify app req resH = runAppM (parseSpan (requestHeaders req) env) $
-  runInSpan (fromMaybe "" $ listToMaybe $ pathInfo req) notify $ \s@Span{..} -> do
+traceMw env notify app req resH = runApp (parseSpan (requestHeaders req) env) $
+  runInSpan ((decodeUtf8 $ requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
     let SpanContext{..} = context
         tid = traceId <> "," <> spanId
         v   = L.insert extensionLogKey tid (vault req)

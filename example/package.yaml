@@ -24,6 +24,8 @@ executables:
       - monad-logger
       - salak
       - http-types
+      - text
+      - swagger2
 
 defaults:
   local: ../defaults.yaml

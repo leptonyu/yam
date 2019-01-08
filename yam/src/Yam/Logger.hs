@@ -4,19 +4,19 @@ module Yam.Logger(
     withLogger
   , putLogger
   , setExtendLog
+  , getLogger
   , extensionLogKey
   , throwS
   , LogConfig(..)
   ) where
 
-import           Control.Exception     (bracket, throw)
-import           Control.Monad         (when)
-import           Control.Monad.Reader
 import qualified Data.Text             as T
 import           GHC.Stack
+import           Servant
 import           System.IO.Unsafe      (unsafePerformIO)
 import           System.Log.FastLogger
-import           Yam.Types
+import           Yam.Types.Env
+import           Yam.Types.Prelude
 
 instance FromJSON LogLevel where
   parseJSON v = go . T.toLower <$> parseJSON v
@@ -97,15 +97,7 @@ getLogger env =
       nlf x _        = x
   in maybe (\_ _ _ _ -> return ()) (`nlf` trace) logger
 
-instance MonadIO m => MonadLogger (AppM m) where
-  monadLoggerLog a b c d = do
-    env <- ask
-    liftIO $ getLogger env a b c $ toLogStr d
-
-instance (MonadIO m) => MonadLoggerIO (AppM m) where
-  askLoggerIO = asks getLogger
-
-throwS :: (HasCallStack, MonadIO m) => ServantErr -> Text -> AppM m a
+throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServantErr -> Text -> m a
 throwS e msg = do
   logErrorCS ?callStack msg
-  lift $ throw e
+  liftIO $ throw e
