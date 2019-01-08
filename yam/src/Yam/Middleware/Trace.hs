@@ -78,14 +78,17 @@ hSpanId = "X-B3-SpanId"
 hSampled :: HeaderName
 hSampled = "X-B3-Sampled"
 
-parseSpan :: RequestHeaders -> Env -> Env
+parseSpan :: RequestHeaders -> Env -> IO Env
 parseSpan headers env =
   let sc = fromMaybe (SpanContext "" HM.empty) $ getAttr spanContextKey env
   in case lookup hTraceId headers of
       Just tid -> let sc' = sc { traceId = decodeUtf8 tid }
-                  in env & setAttr spanContextKey      sc'
-                         & go (maybe (traceId sc') decodeUtf8 $ lookup hSpanId headers) sc'
-      _        -> env
+                  in return $ env
+                      & setAttr spanContextKey      sc'
+                      & go (maybe (traceId sc') decodeUtf8 $ lookup hSpanId headers) sc'
+      _        -> do
+        c <- newContext
+        return $ setAttr spanContextKey c env
   where
     go spanId context env' =
       let name = "-"
@@ -97,21 +100,20 @@ parseSpan headers env =
       in setAttr spanKey Span{..} env'
 
 traceMw :: Env -> (Span -> App ()) -> Middleware
-traceMw env notify app req resH = runApp (parseSpan (requestHeaders req) env) $
-  runInSpan ((decodeUtf8 $ requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
-    let SpanContext{..} = context
-        tid = traceId <> "," <> spanId
-        v   = L.insert extensionLogKey tid (vault req)
-        v'  = L.insert spanKey s v
-    liftIO $ app req {vault = v'}
-      $ resH . mapResponseHeaders (\hs -> (hTraceId,encodeUtf8 traceId):(hSpanId, encodeUtf8 spanId):hs)
+traceMw env' notify app req resH = do
+  env <- parseSpan (requestHeaders req) env'
+  runApp env $
+    runInSpan ((decodeUtf8 $ requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
+      let SpanContext{..} = context
+          tid = traceId <> "," <> spanId
+          v   = L.insert extensionLogKey tid (vault req)
+          v'  = L.insert spanKey s v
+      liftIO $ app req {vault = v'}
+        $ resH . mapResponseHeaders (\hs -> (hTraceId,encodeUtf8 traceId):(hSpanId, encodeUtf8 spanId):hs)
 
 traceMiddleware :: TraceConfig -> AppMiddleware
 traceMiddleware TraceConfig{..}
   = AppMiddleware $ \env f -> if enabled
-    then do
-      c <- newContext
-      let env' = setAttr spanContextKey c env
-      f (env', traceMw env' $ notifier method)
+    then f (env, traceMw env $ notifier method)
     else f (env, id)
 

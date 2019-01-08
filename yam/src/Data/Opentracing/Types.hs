@@ -3,7 +3,6 @@ module Data.Opentracing.Types where
 import qualified Data.HashMap.Lazy as HM
 import           Data.Scientific
 import           Data.Text         (Text)
-import           Data.Time
 
 data SpanTag
   = TagString Text
@@ -29,8 +28,8 @@ data SpanReference = SpanReference
 data Span = Span
   { spanId     :: Text
   , name       :: Text
-  , startTime  :: UTCTime
-  , finishTime :: Maybe UTCTime
+  , startTime  :: Int
+  , finishTime :: Maybe Int
   , tags       :: HM.HashMap Text SpanTag
   , logs       :: HM.HashMap Text Text
   , context    :: SpanContext

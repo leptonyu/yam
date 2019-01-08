@@ -18,7 +18,7 @@ import           Control.Monad.IO.Class
 import qualified Data.HashMap.Lazy      as HM
 import           Data.Opentracing.Types
 import           Data.Text              (Text, justifyRight, pack)
-import           Data.Time
+import           Data.Time.Clock.POSIX
 import           Data.Word
 import           Numeric
 import           System.Random
@@ -42,10 +42,14 @@ newSpan name = do
   context     <- askSpanContext
   newSpan' name context []
 
+
+getNow :: MonadIO m => m Int
+getNow = liftIO $ (round . (* 1000)) <$> getPOSIXTime
+
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
   spanId      <- if null references then return (traceId context) else newId
-  startTime   <- liftIO getCurrentTime
+  startTime   <- getNow
   let finishTime = Nothing
       tags       = HM.empty
       logs       = HM.empty
@@ -73,7 +77,7 @@ setBaggage Span{..} k t =
 
 finishSpan :: MonadTracer m => Span -> m Span
 finishSpan Span{..} = do
-  ts <- liftIO getCurrentTime
+  ts <- getNow
   return Span {finishTime = Just ts, ..}
 
 newContext :: MonadIO m => m SpanContext
