@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 82483f632b94101cc0540f40da5ac386738e24d04847130a5a38fd2b3ebda91f
+-- hash: 62755a0e5aa26eb505c56005ad199e41028b2f17c9311b1540692c6bea273579
 
 name:           example
 version:        0.1.0.0
@@ -29,7 +29,6 @@ executable yam
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.7 && <5
-    , case-insensitive
     , http-types
     , monad-logger
     , salak

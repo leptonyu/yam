@@ -11,23 +11,21 @@ module Yam.Internal(
   , readConf
   ) where
 
-import           Control.Exception          hiding (Handler)
-import qualified Data.ByteString.Lazy.Char8 as B
-import qualified Data.Salak                 as S
-import qualified Data.Vault.Lazy            as L
-import           Network.Wai.Handler.Warp   (run)
+import           Control.Exception                  hiding (Handler)
+import qualified Data.ByteString.Lazy.Char8         as B
+import qualified Data.Salak                         as S
+import qualified Data.Vault.Lazy                    as L
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Servant.Server.Internal.ServantErr
 import           Servant.Swagger
 import           Yam.Logger
 import           Yam.Swagger
 import           Yam.Trace
 import           Yam.Types
 
-runApp :: Env -> App a -> Handler a
-runApp b c = do
-  res :: Either SomeException a <- liftIO $ try (runAppM b c)
-  case res of
-    Left  e -> throwError $ fromMaybe err400 { errBody = B.pack $ show e } (fromException e :: Maybe ServantErr)
-    Right r -> return r
+whenException :: SomeException -> Response
+whenException e = responseServantErr $ fromMaybe err400 { errBody = B.pack $ show e } (fromException e :: Maybe ServantErr)
 
 startYam
   :: forall api. (HasSwagger api, HasServer api '[Env])
@@ -45,16 +43,21 @@ startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig traceConfig vs middlewa
       logInfo $ "Start Service [" <> name <> "] ..."
       logger <- askLoggerIO
       let act = runAM $ foldr1 (<>) (traceMiddleware traceConfig : middlewares)
-      act (setLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
+      act (putLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
         let cxt                  = env :. EmptyContext
             pCxt                 = Proxy :: Proxy '[Env]
             portText             = showText port
             proxy'               = Proxy :: Proxy (Vault :> api)
             server'              = runRequest proxy pCxt server
+            settings             = defaultSettings
+                                 & setPort port
+                                 & setOnException (\_ _ -> return ())
+                                 & setOnExceptionResponse whenException
+                                 -- & setLogger
         when enabled $
           logInfo $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
         logInfo $ "Servant started on port(s): " <> portText
-        lift $ run port
+        lift $ runSettings settings
           $ middleware
           $ serveWithContextAndSwagger sw ac vs proxy' cxt
           $ hoistServerWithContext proxy' pCxt (runApp env) server'
@@ -65,6 +68,9 @@ runRequest p pc a v = hoistServerWithContext p pc go a
     {-# INLINE go #-}
     go :: App a -> App a
     go = withAppM (\env -> env { reqAttributes = Just v})
+
+runApp :: Env -> App a -> Handler a
+runApp b c = liftIO $ runAppM b c
 
 readConf :: (Default a, S.FromProperties a) => Text -> S.Properties -> a
 readConf k p = fromMaybe def $ S.lookup k p

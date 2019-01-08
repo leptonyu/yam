@@ -8,7 +8,13 @@ module Yam.Swagger(
 
 import           Control.Lens       hiding (Context, allOf)
 import           Data.Reflection
-import           Data.Swagger       hiding (Header, name, port, version)
+import           Data.Swagger       hiding
+    ( Header
+    , Response
+    , name
+    , port
+    , version
+    )
 import qualified Data.Swagger       as S
 import           GHC.TypeLits
 import           Servant.Swagger

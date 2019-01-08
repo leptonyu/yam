@@ -2,7 +2,7 @@
 module Yam.Logger(
   -- * Logger Function
     withLogger
-  , setLogger
+  , putLogger
   , setExtendLog
   , extensionLogKey
   , throwS
@@ -85,8 +85,8 @@ extensionLogKey = unsafePerformIO newKey
 setExtendLog :: (Text -> Text) -> Env -> Env
 setExtendLog f env = let mt = fromMaybe "" $ getAttr extensionLogKey env in setAttr extensionLogKey (f mt) env
 
-setLogger :: LogFunc -> Env -> Env
-setLogger = setAttr loggerKey
+putLogger :: LogFunc -> Env -> Env
+putLogger = setAttr loggerKey
 
 getLogger :: Env -> LogFunc
 getLogger env =

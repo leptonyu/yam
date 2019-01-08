@@ -39,6 +39,7 @@ module Yam.Types(
   , MonadIO
   , liftIO
   , withReaderT
+  , MonadError(..)
   , module Control.Monad.Logger.CallStack
   , module Data.Maybe
   , module Servant
@@ -48,6 +49,7 @@ module Yam.Types(
   , module Data.Version
   ) where
 
+import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
@@ -103,16 +105,22 @@ setAttr k v Env{..} = case reqAttributes of
   Just av -> Env attributes (Just $ L.insert k v av)     application
   _       -> Env (L.insert k v attributes) reqAttributes application
 
-newtype AppM m a = AppM { runAppM' :: ReaderT Env m a } deriving (Functor, Applicative, Monad, MonadTrans, MonadIO)
+newtype AppM m a = AppM { runAppM' :: ReaderT Env m a } deriving
+    ( Functor
+    , Applicative
+    , Monad
+    , MonadTrans
+    , MonadIO
+    , MonadReader Env)
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 type App = AppM IO
 
 runAppM :: Env -> AppM m a -> m a
 runAppM e a = runReaderT (runAppM' a) e
 
-instance Monad m => MonadReader Env (AppM m) where
-  ask = AppM ask
-  local f (AppM a) = AppM $ local f a
+instance MonadError ServantErr m => MonadError ServantErr (AppM m) where
+  throwError = AppM . throwError
+  catchError (AppM a) f = AppM $ catchError a (runAppM'. f)
 
 instance MonadUnliftIO m => MonadUnliftIO (AppM m) where
   withRunInIO f = do
