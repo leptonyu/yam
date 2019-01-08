@@ -65,8 +65,8 @@ newLogger name LogConfig{..} = do
   return (toLogger l, close)
   where
     toLogger f Loc{..} _ ll s = when (level <= ll) $ f $ \t ->
-      let locate = if ll /= LevelError then "" else "@" <> toLogStr loc_filename <> toLogStr (show loc_start)
-      in toLogStr t <> " " <> toStr ll <> " [" <> toLogStr name <> "] " <> toLogStr loc_module <> " " <> locate <> " - " <> s <> "\n"
+      let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
+      in toLogStr t <> " " <> toStr ll <> " [" <> toLogStr name <> "] " <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
 withLogger :: Text -> LogConfig -> LoggingT IO a -> IO a
 withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT action f
