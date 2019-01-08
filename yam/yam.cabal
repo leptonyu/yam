@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3ea210bafcbfc1dd5922ae483e20fe4fcb3098a44f050e6fe25f0aa45cadf9c7
+-- hash: d0d12caa6353f78e73b3f41fe85e297a5302047de5d18d96bbc18791a47aa88b
 
 name:           yam
 version:        0.5.5
@@ -96,7 +96,7 @@ test-suite spec
   build-depends:
       QuickCheck
     , aeson
-    , base >=4.7 && <5
+    , base >=4.11 && <5
     , bytestring
     , data-default
     , fast-logger

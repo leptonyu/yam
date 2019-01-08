@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 23eba59e14b14d0a82c01081fea2af6cfa7fa44c0d1fe73bab65dedd6ddba1f5
+-- hash: 3d3013d7d576bada59d2ac402a4379b7be56283f7f2e1196cef81d1ad0c04c5d
 
 name:           yam-datasource
 version:        0.5.5
