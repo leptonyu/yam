@@ -2,6 +2,7 @@ module Yam.Auth where
 import           Control.Lens
 import           Data.Default
 import           Data.Swagger
+import qualified Data.Vault.Lazy                            as L
 import           Servant.Server.Internal.RoutingApplication
 import           Servant.Swagger
 import           Servant.Swagger.Internal
@@ -18,6 +19,7 @@ instance Default (AuthChecker principal) where
 class HasAuthKey principal where
   authKey :: Key (AuthChecker principal)
   authKey = unsafePerformIO newKey
+  toLog :: principal -> Text
 
 instance ( HasContextEntry context Env
          , HasServer api context
@@ -25,7 +27,7 @@ instance ( HasContextEntry context Env
          => HasServer (CheckAuth principal :> api) context where
   type ServerT (CheckAuth principal :> api) m = principal -> ServerT api m
   hoistServerWithContext _ pc nt s = hoistServerWithContext (Proxy :: Proxy api) pc nt . s
-  route _ context server = route (Proxy :: Proxy api) context $ server `addAuthCheck` authCheck
+  route _ context server = route (Proxy :: Proxy api) context $ server `addFixAuthCheck` authCheck
     where
       env :: Env
       env = getContextEntry context
@@ -33,6 +35,17 @@ instance ( HasContextEntry context Env
       checker = runCheckAuth $ reqAttr authKey env
       authCheck :: DelayedIO principal
       authCheck = withRequest $ \req -> liftIO $ runAppM env { reqAttributes = Just (vault req)} (checker req)
+      -- Fix Origin `addAuthCheck`, add logger info
+      addFixAuthCheck
+        :: Delayed env (principal -> b)
+        -> DelayedIO principal
+        -> Delayed env b
+      addFixAuthCheck Delayed{..} new =
+        Delayed
+          { authD   = (,) <$> authD <*> new
+          , serverD = \ c p h (y, v) b req -> ($ v) <$> serverD c p h y b req { vault = L.adjust (\x -> x <> "," <> toLog v) extensionLogKey $ vault req}
+          , ..
+          }
 
 instance (HasSwagger api, ToParamSchema principal) => HasSwagger (CheckAuth principal :> api) where
   toSwagger _ = toSwagger (Proxy :: Proxy api)

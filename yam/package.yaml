@@ -44,10 +44,10 @@ library:
     - Yam
     - Yam.Internal
     - Yam.Auth
+    - Yam.Swagger
   other-modules:
     - Yam.Types
     - Yam.Logger
-    - Yam.Swagger
     - Yam.Trace
 
     - Data.Opentracing

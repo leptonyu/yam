@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e23787ccf16d1d53774e3e6cdf88654b07650fb22037b0520dee9d427b0ea5dc
+-- hash: 7f6437884563447bffaac4f2d2d069dc6e62ff52e55924dc50208770986c8198
 
 name:           yam
 version:        0.5.4
@@ -26,10 +26,10 @@ library
       Yam
       Yam.Internal
       Yam.Auth
+      Yam.Swagger
   other-modules:
       Yam.Types
       Yam.Logger
-      Yam.Swagger
       Yam.Trace
       Data.Opentracing
       Data.Opentracing.Types

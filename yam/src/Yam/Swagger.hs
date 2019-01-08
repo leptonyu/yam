@@ -1,9 +1,15 @@
 {-# LANGUAGE NoPolyKinds #-}
-module Yam.Swagger where
+module Yam.Swagger(
+    SwaggerConfig(..)
+  , serveWithContextAndSwagger
+  , module Data.Swagger
+  , module Control.Lens
+  ) where
 
-import           Control.Lens       hiding (Context)
+import           Control.Lens       hiding (Context, allOf)
 import           Data.Reflection
-import           Data.Swagger       hiding (name, port)
+import           Data.Swagger       hiding (Header, name, port, version)
+import qualified Data.Swagger       as S
 import           GHC.TypeLits
 import           Servant.Swagger
 import           Servant.Swagger.UI
@@ -54,5 +60,5 @@ serveWithContextAndSwagger SwaggerConfig{..} AppConfig{..} versions proxy cxt ap
     g4 s = s
       & info .~ (mempty
           & title   .~ (name <> " API Documents")
-          & version .~ pack (showVersion versions))
+          & S.version .~ pack (showVersion versions))
       & host ?~ Host "localhost" (Just $ fromIntegral port)
