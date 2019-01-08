@@ -13,6 +13,7 @@ Servant based Web Wrapper for Production in Haskell.
 ```Haskell
 
 import qualified Data.Salak                     as S
+import           Servant
 import           Yam
 
 type API = "hello" :> Get '[PlainText] Text
