@@ -35,11 +35,11 @@ newSpan name = do
 
 
 getNow :: MonadIO m => m Int
-getNow = liftIO $ (round . (* 1000)) <$> getPOSIXTime
+getNow = liftIO $ round . (* 1000) <$> getPOSIXTime
 
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
-  spanId      <- if null references then return (traceId context) else liftIO $ randomString
+  spanId      <- if null references then return (traceId context) else liftIO randomString
   startTime   <- getNow
   let finishTime = Nothing
       tags       = HM.empty
@@ -73,6 +73,6 @@ finishSpan Span{..} = do
 
 newContext :: MonadIO m => m SpanContext
 newContext = do
-  traceId <- liftIO $ randomString
+  traceId <- liftIO randomString
   let baggage = HM.empty
   return SpanContext{..}

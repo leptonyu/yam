@@ -75,9 +75,8 @@ randomGen :: GenIO
 randomGen = unsafePerformIO create
 
 -- | Utility
--- {-# INLINE randomString #-}
 randomString :: IO ByteString
-randomString = (L.toStrict . B16.encode . B.encode) <$> (uniform randomGen :: IO Word64)
+randomString = L.toStrict . B16.encode . B.encode <$> (uniform randomGen :: IO Word64)
 
 {-# INLINE showText #-}
 showText :: Show a => a -> Text

@@ -4,7 +4,7 @@
 
 module Main where
 
-import qualified Data.ByteString               as B
+import qualified Data.ByteString         as B
 import           Test.Hspec
 import           Test.QuickCheck.Monadic
 import           Yam

@@ -103,7 +103,7 @@ traceMw :: Env -> (Span -> App ()) -> Middleware
 traceMw env' notify app req resH = do
   env <- parseSpan (requestHeaders req) env'
   runApp env $
-    runInSpan ((decodeUtf8 $ requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
+    runInSpan (decodeUtf8 (requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
       let SpanContext{..} = context
           tid = decodeUtf8 $ traceId <> "," <> spanId
           v   = L.insert extensionLogKey tid (vault req)
