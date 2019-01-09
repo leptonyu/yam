@@ -4,7 +4,7 @@
 
 module Main where
 
-import qualified Data.Text               as T
+import qualified Data.ByteString               as B
 import           Test.Hspec
 import           Test.QuickCheck.Monadic
 import           Yam
@@ -19,5 +19,5 @@ specConfig = do
   context "randomTest" $ do
     it "random" $ do
       monadicIO $ do
-        s <- run $ randomString 14
-        assert (T.length s == 14)
+        s <- run $ randomString
+        assert (B.length s == 16)

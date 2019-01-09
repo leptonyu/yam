@@ -82,10 +82,10 @@ parseSpan :: RequestHeaders -> Env -> IO Env
 parseSpan headers env =
   let sc = fromMaybe (SpanContext "" HM.empty) $ getAttr spanContextKey env
   in case lookup hTraceId headers of
-      Just tid -> let sc' = sc { traceId = decodeUtf8 tid }
+      Just tid -> let sc' = sc { traceId = tid }
                   in return $ env
                       & setAttr spanContextKey      sc'
-                      & go (maybe (traceId sc') decodeUtf8 $ lookup hSpanId headers) sc'
+                      & go (fromMaybe (traceId sc') $ lookup hSpanId headers) sc'
       _        -> do
         c <- newContext
         return $ setAttr spanContextKey c env
@@ -105,11 +105,11 @@ traceMw env' notify app req resH = do
   runApp env $
     runInSpan ((decodeUtf8 $ requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
       let SpanContext{..} = context
-          tid = traceId <> "," <> spanId
+          tid = decodeUtf8 $ traceId <> "," <> spanId
           v   = L.insert extensionLogKey tid (vault req)
           v'  = L.insert spanKey s v
       liftIO $ app req {vault = v'}
-        $ resH . mapResponseHeaders (\hs -> (hTraceId,encodeUtf8 traceId):(hSpanId, encodeUtf8 spanId):hs)
+        $ resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
 
 traceMiddleware :: TraceConfig -> AppMiddleware
 traceMiddleware TraceConfig{..}

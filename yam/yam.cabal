@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a1b0482111bfccab7531d5ef99dd05f9bd415f4fc8d339dca4d208abdfb365c4
+-- hash: 4dfc6beb9e063f615709d33dcce10e05eb705d65ba4647939889a71b5831cfe8
 
 name:           yam
-version:        0.5.5
+version:        0.5.6
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
@@ -45,6 +45,8 @@ library
   build-depends:
       aeson
     , base >=4.11 && <5
+    , base16-bytestring
+    , binary
     , bytestring
     , data-default
     , fast-logger
@@ -52,7 +54,7 @@ library
     , lens
     , monad-logger
     , mtl
-    , random
+    , mwc-random
     , reflection
     , salak >=0.1.4 && <0.3
     , scientific
@@ -97,6 +99,8 @@ test-suite spec
       QuickCheck
     , aeson
     , base >=4.11 && <5
+    , base16-bytestring
+    , binary
     , bytestring
     , data-default
     , fast-logger
@@ -105,7 +109,7 @@ test-suite spec
     , lens
     , monad-logger
     , mtl
-    , random
+    , mwc-random
     , reflection
     , salak >=0.1.4 && <0.3
     , scientific

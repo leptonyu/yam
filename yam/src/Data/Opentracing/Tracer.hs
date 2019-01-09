@@ -17,11 +17,8 @@ module Data.Opentracing.Tracer(
 import           Control.Monad.IO.Class
 import qualified Data.HashMap.Lazy      as HM
 import           Data.Opentracing.Types
-import           Data.Text              (Text, justifyRight, pack)
 import           Data.Time.Clock.POSIX
-import           Data.Word
-import           Numeric
-import           System.Random
+import           Yam.Types.Prelude
 
 type SpanName = Text
 
@@ -30,12 +27,6 @@ class MonadIO m => MonadTracer m where
 
 class MonadTracer m => MonadTracing m where
   runInSpan :: SpanName -> (Span -> m ()) -> (Span -> m a) ->  m a
-
-{-# INLINE newId #-}
-newId :: MonadIO m => m Text
-newId = liftIO $ do
-  c <- randomIO :: IO Word64
-  return $ justifyRight 16 '0' $ pack $ showHex c ""
 
 newSpan :: MonadTracer m => SpanName -> m Span
 newSpan name = do
@@ -48,7 +39,7 @@ getNow = liftIO $ (round . (* 1000)) <$> getPOSIXTime
 
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
-  spanId      <- if null references then return (traceId context) else newId
+  spanId      <- if null references then return (traceId context) else liftIO $ randomString
   startTime   <- getNow
   let finishTime = Nothing
       tags       = HM.empty
@@ -82,6 +73,6 @@ finishSpan Span{..} = do
 
 newContext :: MonadIO m => m SpanContext
 newContext = do
-  traceId <- newId
+  traceId <- liftIO $ randomString
   let baggage = HM.empty
   return SpanContext{..}

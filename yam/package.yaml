@@ -17,6 +17,9 @@ dependencies:
   - salak >= 0.1.4 && < 0.3
   - text
   - bytestring
+  - base16-bytestring
+  - binary
+  - mwc-random
   - aeson
   - mtl
   - time
@@ -27,7 +30,6 @@ dependencies:
   - reflection
   - data-default
   - vault
-  - random
   - monad-logger
   - fast-logger
   - wai

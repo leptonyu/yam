@@ -32,7 +32,7 @@ instance Default Env where
   def = Env L.empty Nothing def
 
 getAttr :: Key a -> Env -> Maybe a
-getAttr k Env{..} = listToMaybe $ catMaybes $ L.lookup k <$> catMaybes [reqAttributes, Just attributes]
+getAttr k Env{..} = (reqAttributes >>= L.lookup k) <|> L.lookup k attributes
 
 reqAttr :: Default a => Key a -> Env -> a
 reqAttr k = fromMaybe def . getAttr k

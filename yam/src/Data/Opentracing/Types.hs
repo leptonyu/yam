@@ -1,5 +1,6 @@
 module Data.Opentracing.Types where
 
+import           Data.ByteString   (ByteString)
 import qualified Data.HashMap.Lazy as HM
 import           Data.Scientific
 import           Data.Text         (Text)
@@ -11,7 +12,7 @@ data SpanTag
   deriving (Eq, Show)
 
 data SpanContext = SpanContext
-  { traceId :: Text
+  { traceId :: ByteString
   , baggage :: HM.HashMap Text (Maybe Text)
   } deriving (Eq, Show)
 
@@ -22,11 +23,11 @@ data SpanReferenceType
 
 data SpanReference = SpanReference
   { referenceType :: SpanReferenceType
-  , parentId      :: Text
+  , parentId      :: ByteString
   } deriving (Eq, Show)
 
 data Span = Span
-  { spanId     :: Text
+  { spanId     :: ByteString
   , name       :: Text
   , startTime  :: Int
   , finishTime :: Maybe Int
