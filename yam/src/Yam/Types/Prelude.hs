@@ -1,8 +1,10 @@
 module Yam.Types.Prelude(
-    defJson
-  , randomString
+    randomString
   , showText
-  , readConfig
+  , (.>>)
+  , (.?>)
+  , (.?=)
+  , (.|=)
   , LogFunc
   , Default(..)
   , Text
@@ -18,7 +20,6 @@ module Yam.Types.Prelude(
   , module Data.Proxy
   , module Data.Vault.Lazy
   , module Data.Maybe
-  , module Data.Aeson
   , module Data.Word
   , module Data.Text.Encoding
   , module Data.Function
@@ -39,7 +40,6 @@ import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
-import           Data.Aeson
 import qualified Data.Binary                    as B
 import           Data.ByteString                (ByteString)
 import qualified Data.ByteString.Base16.Lazy    as B16
@@ -51,10 +51,12 @@ import           Data.Proxy
 import           Data.Salak
     ( FromProperties (..)
     , Properties
+    , Property (..)
+    , Return (..)
     , defaultPropertiesWithFile
     )
 import qualified Data.Salak                     as S
-import           Data.Text                      (Text, pack)
+import           Data.Text                      (Text, pack, unpack)
 import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                (Key, Vault, newKey)
 import           Data.Version
@@ -65,10 +67,31 @@ import           Network.Wai
 import           System.IO.Unsafe               (unsafePerformIO)
 import           System.Random.MWC
 
-type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
+infixl 5 .?>
+(.?>) :: FromProperties a => Properties -> Text -> Return a
+(.?>) = flip S.lookup'
 
-defJson :: FromJSON a => a
-defJson = fromJust $ decode "{}"
+infixl 5 .|=
+(.|=) :: Return a -> a -> a
+(.|=) (OK   a) _ = a
+(.|=) (Fail e) _ = error e
+(.|=) _        d = d
+
+infixl 5 .?=
+(.?=) :: Return a -> a -> Return a
+(.?=) a b = OK (a .|= b)
+
+infixl 5 .>>
+(.>>) :: FromProperties a => Properties -> Text -> a
+(.>>) p k = case p .?> k of
+  OK v   -> v
+  Empty  -> case fromProperties S.empty of
+    (OK   a) -> a
+    (Fail e) -> error e
+    _        -> error $ "Config " <> unpack k <> " not found"
+  Fail e -> error e
+
+type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
 {-# NOINLINE randomGen #-}
 randomGen :: GenIO
@@ -82,5 +105,3 @@ randomString = L.toStrict . B16.encode . B.encode <$> (uniform randomGen :: IO W
 showText :: Show a => a -> Text
 showText = pack . show
 
-readConfig :: (Default a, FromProperties a) => Text -> Properties -> a
-readConfig k p = fromMaybe def $ S.lookup k p

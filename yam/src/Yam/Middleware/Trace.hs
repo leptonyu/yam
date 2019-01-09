@@ -27,16 +27,16 @@ data TraceNotifyType
   = NoTracer
   deriving (Eq, Show)
 
-instance FromJSON TraceNotifyType where
-  parseJSON v = go . T.toLower <$> parseJSON v
+instance FromProperties TraceNotifyType where
+  fromProperties = fromProperties >=> go
     where
-      go :: Text -> TraceNotifyType
-      go _ = NoTracer
+      go :: Property -> Return TraceNotifyType
+      go _ = OK NoTracer
 
-instance FromJSON TraceConfig where
-  parseJSON = withObject "TraceConfig" $ \v -> TraceConfig
-    <$> v .:? "enabled" .!= True
-    <*> v .:? "type"    .!= NoTracer
+instance FromProperties TraceConfig where
+  fromProperties p = TraceConfig
+    <$> p .?> "enabled" .?= enabled def
+    <*> p .?> "type"    .?= method  def
 
 instance Default TraceConfig where
   def = TraceConfig True NoTracer

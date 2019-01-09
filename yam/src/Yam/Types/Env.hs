@@ -14,13 +14,13 @@ data AppConfig = AppConfig
   , port :: Int
   } deriving (Eq, Show)
 
-instance FromJSON AppConfig where
-  parseJSON = withObject "AppConfig" $ \v -> AppConfig
-    <$> v .:? "name" .!= "application"
-    <*> v .:? "port" .!= 8888
+instance FromProperties AppConfig where
+  fromProperties p = AppConfig
+    <$> p .?> "name" .?= name def
+    <*> p .?> "port" .?= port def
 
 instance Default AppConfig where
-  def = defJson
+  def = AppConfig "application" 8888
 
 data Env = Env
   { attributes    :: Vault

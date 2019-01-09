@@ -18,15 +18,17 @@ import           System.Log.FastLogger
 import           Yam.Types.Env
 import           Yam.Types.Prelude
 
-instance FromJSON LogLevel where
-  parseJSON v = go . T.toLower <$> parseJSON v
+instance FromProperties LogLevel where
+  fromProperties = fromProperties >=> go
     where
-      go :: Text -> LogLevel
-      go "debug" = LevelDebug
-      go "info"  = LevelInfo
-      go "warn"  = LevelWarn
-      go "error" = LevelError
-      go level   = LevelOther level
+      go :: Property -> Return LogLevel
+      go (PStr t) = OK (gt $ T.toLower t)
+      go _        = Fail "loglevel shoudbe string"
+      gt "debug" = LevelDebug
+      gt "info"  = LevelInfo
+      gt "warn"  = LevelWarn
+      gt "error" = LevelError
+      gt _       = LevelOther "fatal"
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
@@ -45,15 +47,15 @@ data LogConfig = LogConfig
   } deriving (Eq, Show)
 
 instance Default LogConfig where
-  def = defJson
+  def = LogConfig 4096 "" 10485760 256 LevelInfo
 
-instance FromJSON LogConfig where
-  parseJSON = withObject "LogConfig" $ \v -> LogConfig
-    <$> v .:? "buffer-size" .!= 4096
-    <*> v .:? "file"        .!= ""
-    <*> v .:? "max-size"    .!= 10485760
-    <*> v .:? "max-history" .!= 256
-    <*> v .:? "level"       .!= LevelInfo
+instance FromProperties LogConfig where
+  fromProperties p = LogConfig
+    <$> p .?> "buffer-size" .?= bufferSize    def
+    <*> p .?> "file"        .?= file          def
+    <*> p .?> "max-size"    .?= maxSize       def
+    <*> p .?> "max-history" .?= rotateHistory def
+    <*> p .?> "level"       .?= level         def
 
 newLogger :: Text -> LogConfig -> IO (LogFunc, IO ())
 newLogger name LogConfig{..} = do

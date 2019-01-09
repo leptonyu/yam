@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4dfc6beb9e063f615709d33dcce10e05eb705d65ba4647939889a71b5831cfe8
+-- hash: 0e85659d929d79a1138df904ce2e09ac329fcd211b087fcdb8ef9c3f33ad9e76
 
 name:           yam
 version:        0.5.6
@@ -43,8 +43,7 @@ library
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
-      aeson
-    , base >=4.11 && <5
+      base >=4.11 && <5
     , base16-bytestring
     , binary
     , bytestring
@@ -97,7 +96,6 @@ test-suite spec
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck
-    , aeson
     , base >=4.11 && <5
     , base16-bytestring
     , binary

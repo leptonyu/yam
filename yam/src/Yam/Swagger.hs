@@ -5,7 +5,7 @@ module Yam.Swagger(
   , module Control.Lens
   ) where
 
-import           Control.Lens       hiding (Context, allOf, (.=))
+import           Control.Lens       hiding (Context, Empty, allOf, (.=))
 import           Data.Reflection
 import           Data.Swagger       hiding (name, port)
 import qualified Data.Swagger       as S
@@ -23,13 +23,13 @@ data SwaggerConfig = SwaggerConfig
   } deriving (Eq, Show)
 
 instance Default SwaggerConfig where
-  def = defJson
+  def = SwaggerConfig "swagger-ui" "swagger-ui.json" True
 
-instance FromJSON SwaggerConfig where
-  parseJSON = withObject "SwaggerConfig" $ \v -> SwaggerConfig
-    <$> v .:? "dir"     .!= "swagger-ui"
-    <*> v .:? "schema"  .!= "swagger-ui.json"
-    <*> v .:? "enabled" .!= True
+instance FromProperties SwaggerConfig where
+  fromProperties p = SwaggerConfig
+    <$> p .?> "dir"     .?= urlDir    def
+    <*> p .?> "schema"  .?= urlSchema def
+    <*> p .?> "enabled" .?= enabled   def
 
 type SAPI dir schema api = SwaggerSchemaUI dir schema :<|> api
 

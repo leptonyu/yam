@@ -74,7 +74,7 @@ start
   -> ServerT api App
   -> IO ()
 start p = startYam
-  (readConfig "yam.application" p)
-  (readConfig "yam.swagger"     p)
-  (readConfig "yam.logging"     p)
-  (readConfig "yam.trace"       p)
+  (p .>> "yam.application")
+  (p .>> "yam.swagger"    )
+  (p .>> "yam.logging"    )
+  (p .>> "yam.trace"      )
