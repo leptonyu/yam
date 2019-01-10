@@ -96,7 +96,7 @@ type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
 {-# NOINLINE randomGen #-}
 randomGen :: GenIO
-randomGen = unsafePerformIO create
+randomGen = unsafePerformIO createSystemRandom
 
 -- | Utility
 randomString :: IO ByteString
