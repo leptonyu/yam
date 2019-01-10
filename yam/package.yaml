@@ -21,7 +21,6 @@ dependencies:
   - binary
   - mwc-random
   - mtl
-  - time
   - scientific
   - unordered-containers
   - unliftio-core
@@ -32,6 +31,7 @@ dependencies:
   - monad-logger
   - fast-logger
   - wai
+  - wai-extra
   - warp
   - http-types
   - servant-server
@@ -45,6 +45,7 @@ library:
     - Yam
     - Yam.Internal
     - Yam.Middleware
+    - Yam.Middleware.Default
     - Yam.Middleware.Auth
     - Yam.Middleware.Trace
     - Yam.Swagger

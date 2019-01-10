@@ -14,7 +14,7 @@ import           Servant.Server.Internal.ServantErr
 import           Servant.Swagger
 import           Yam.Logger
 import           Yam.Middleware
-import           Yam.Middleware.Trace
+import           Yam.Middleware.Default
 import           Yam.Swagger
 import           Yam.Types
 
@@ -26,17 +26,17 @@ startYam
   => AppConfig
   -> SwaggerConfig
   -> LogConfig
-  -> TraceConfig
+  -> Bool
   -> Version
   -> [AppMiddleware]
   -> Proxy api
   -> ServerT api App
   -> IO ()
-startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig traceConfig vs middlewares proxy server
+startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware vs middlewares proxy server
   = withLogger name logConfig $ do
       logInfo $ "Start Service [" <> name <> "] ..."
       logger <- askLoggerIO
-      let act = runAM $ foldr1 (<>) (traceMiddleware traceConfig : middlewares)
+      let act = runAM $ foldr1 (<>) ((if enableDefaultMiddleware then defaultMiddleware else mempty) : middlewares)
       act (putLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
         let cxt                  = env :. EmptyContext
             pCxt                 = Proxy :: Proxy '[Env]
@@ -77,4 +77,4 @@ start p = startYam
   (p .>> "yam.application")
   (p .>> "yam.swagger"    )
   (p .>> "yam.logging"    )
-  (p .>> "yam.trace"      )
+  (p .?> "yam.middleware.default.enabled" .|= True)
