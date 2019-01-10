@@ -63,18 +63,19 @@ newLogger name LogConfig{..} = do
   let ft = if file == ""
             then LogStdout $ fromIntegral bufferSize
             else LogFile (FileLogSpec file (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
+      ln = " [" <> toLogStr name <> "] "
   (l,close) <- newTimedFastLogger tc ft
-  return (toLogger l, close)
+  return (toLogger ln l, close)
   where
-    toLogger f Loc{..} _ ll s = when (level <= ll) $ f $ \t ->
+    toLogger xn f Loc{..} _ ll s = when (level <= ll) $ f $ \t ->
       let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
-      in toLogStr t <> " " <> toStr ll <> " [" <> toLogStr name <> "] " <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
+      in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
 withLogger :: Text -> LogConfig -> LoggingT IO a -> IO a
 withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT action f
 
 addTrace :: LogFunc -> Text -> LogFunc
-addTrace f tid a b c d = f a b c ("[" <> toLogStr tid <> "] " <> d)
+addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)
 
 {-# NOINLINE loggerKey #-}
 loggerKey :: Key LogFunc

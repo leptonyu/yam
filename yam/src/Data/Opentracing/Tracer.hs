@@ -17,7 +17,7 @@ module Data.Opentracing.Tracer(
 import           Control.Monad.IO.Class
 import qualified Data.HashMap.Lazy      as HM
 import           Data.Opentracing.Types
-import           Data.Time.Clock.POSIX
+-- import           Data.Time.Clock.POSIX
 import           Yam.Types.Prelude
 
 type SpanName = Text
@@ -35,7 +35,8 @@ newSpan name = do
 
 
 getNow :: MonadIO m => m Int
-getNow = liftIO $ round . (* 1000) <$> getPOSIXTime
+-- getNow = liftIO $ round . (* 1000) <$> getPOSIXTime
+getNow = return 0
 
 newSpan' :: MonadTracer m => SpanName -> SpanContext -> [SpanReference] -> m Span
 newSpan' name context references = do
