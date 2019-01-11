@@ -2,6 +2,7 @@ module Yam.Types(
   -- * AppM Monad
     App
   , runApp
+  , runTestApp
   , askApp
   , askAttr
   , withAttr
@@ -23,6 +24,9 @@ newtype App a = App { runApp' :: ReaderT Env IO a } deriving
 
 runApp :: Env -> App a -> IO a
 runApp e a = runReaderT (runApp' a) e
+
+runTestApp :: Key a -> a -> App b -> IO b
+runTestApp k v a = runApp def $ withAttr k v a
 
 instance MonadUnliftIO App where
   withRunInIO f = do

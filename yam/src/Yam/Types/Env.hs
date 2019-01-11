@@ -10,17 +10,19 @@ import qualified Data.Vault.Lazy   as L
 import           Yam.Types.Prelude
 
 data AppConfig = AppConfig
-  { name :: Text
-  , port :: Int
+  { name          :: Text
+  , port          :: Int
+  , slowlorisSize :: Int -- Bytes
   } deriving (Eq, Show)
 
 instance FromProperties AppConfig where
   fromProperties p = AppConfig
-    <$> p .?> "name" .?= name def
-    <*> p .?> "port" .?= port def
+    <$> p .?> "name"           .?= name def
+    <*> p .?> "port"           .?= port def
+    <*> p .?> "slowloris-size" .?= slowlorisSize def
 
 instance Default AppConfig where
-  def = AppConfig "application" 8888
+  def = AppConfig "application" 8888 2048
 
 data Env = Env
   { attributes    :: Vault

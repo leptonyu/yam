@@ -108,8 +108,11 @@ traceMw env' notify app req resH = do
           tid = decodeUtf8 $ traceId <> "," <> spanId
           v   = L.insert extensionLogKey tid (vault req)
           v'  = L.insert spanKey s v
-      liftIO $ app req {vault = v'}
-        $ resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
+          rh' = resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
+          c e = do
+            runApp env (logError $ showText e)
+            rh' $ whenException e
+      liftIO (app req {vault = v'} rh' `catch` c)
 
 traceMiddleware :: TraceConfig -> AppMiddleware
 traceMiddleware TraceConfig{..}

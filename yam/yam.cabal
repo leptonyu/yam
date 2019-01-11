@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be330b92d80ea701c4b50a741fbddb53f2ad6661fed89df7bd4136c71f1f914b
+-- hash: f335b7c640ac23c2480430e979e62ce1b30e24809422d910c6696c2b16316bfe
 
 name:           yam
 version:        0.5.7
@@ -29,6 +29,7 @@ library
       Yam.Middleware.Default
       Yam.Middleware.Auth
       Yam.Middleware.Trace
+      Yam.Middleware.Client
       Yam.Swagger
       Yam.Types
       Yam.Types.Prelude
@@ -50,6 +51,7 @@ library
     , bytestring
     , data-default
     , fast-logger
+    , http-client
     , http-types
     , lens
     , monad-logger
@@ -58,6 +60,7 @@ library
     , reflection
     , salak >=0.1.4 && <0.3
     , scientific
+    , servant-client
     , servant-server
     , servant-swagger
     , servant-swagger-ui
@@ -84,6 +87,7 @@ test-suite spec
       Yam.Logger
       Yam.Middleware
       Yam.Middleware.Auth
+      Yam.Middleware.Client
       Yam.Middleware.Default
       Yam.Middleware.Trace
       Yam.Swagger
@@ -105,6 +109,7 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
+    , http-client
     , http-types
     , lens
     , monad-logger
@@ -113,6 +118,7 @@ test-suite spec
     , reflection
     , salak >=0.1.4 && <0.3
     , scientific
+    , servant-client
     , servant-server
     , servant-swagger
     , servant-swagger-ui

@@ -20,7 +20,7 @@ instance Monoid AppMiddleware where
 -- | Simple AppMiddleware
 simpleAppMiddleware :: HasCallStack => (Bool, Text) -> Key a -> a -> AppMiddleware
 simpleAppMiddleware (enabled,amname) k v =
-  if enabled
+  v `seq` if enabled
     then AppMiddleware $ \e f -> do
       logInfoCS ?callStack $ amname <> " enabled"
       f (setAttr k v e, id)

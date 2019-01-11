@@ -34,10 +34,12 @@ dependencies:
   - wai-extra
   - warp
   - http-types
+  - servant-client
   - servant-server
   - servant-swagger
   - servant-swagger-ui
   - swagger2
+  - http-client
 
 library:
   source-dirs: src
@@ -48,6 +50,7 @@ library:
     - Yam.Middleware.Default
     - Yam.Middleware.Auth
     - Yam.Middleware.Trace
+    - Yam.Middleware.Client 
     - Yam.Swagger
     - Yam.Types
     - Yam.Types.Prelude

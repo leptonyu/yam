@@ -11,8 +11,6 @@ module Yam.Logger(
   ) where
 
 import qualified Data.Text             as T
-import           GHC.Stack
-import           Servant
 import           System.IO.Unsafe      (unsafePerformIO)
 import           System.Log.FastLogger
 import           Yam.Types.Env
@@ -99,8 +97,3 @@ getLogger env =
       nlf x (Just t) = addTrace x t
       nlf x _        = x
   in maybe (\_ _ _ _ -> return ()) (`nlf` trace) logger
-
-throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServantErr -> Text -> m a
-throwS e msg = do
-  logErrorCS ?callStack msg
-  liftIO $ throw e
