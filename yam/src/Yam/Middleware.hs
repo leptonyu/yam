@@ -3,10 +3,11 @@ module Yam.Middleware(
     AppMiddleware(..)
   , simpleAppMiddleware
   , simpleWebMiddleware
+  , runMiddleware
   ) where
 
-import           Yam.Types.Env
-import           Yam.Types.Prelude
+import           Yam.Logger
+import           Yam.Types
 
 -- | Application Middleware
 newtype AppMiddleware = AppMiddleware {runAM :: Env -> ((Env, Middleware)-> LoggingT IO ()) -> LoggingT IO ()}
@@ -33,3 +34,8 @@ simpleWebMiddleware (enabled,amname) m =
       logInfoCS ?callStack $ amname <> " enabled"
       f (e,m)
     else mempty
+
+runMiddleware :: MonadIO m => AppMiddleware -> App a -> m ()
+runMiddleware (AppMiddleware f) a = liftIO $ withLogger "test" def $ do
+  lf <- askLoggerIO
+  f (putLogger lf def) $ \(e,_) -> liftIO $ void $ runApp e a

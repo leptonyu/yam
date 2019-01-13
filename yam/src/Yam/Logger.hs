@@ -20,8 +20,8 @@ instance FromProperties LogLevel where
   fromProperties = fromProperties >=> go
     where
       go :: Property -> Return LogLevel
-      go (PStr t) = OK (gt $ T.toLower t)
-      go _        = Fail "loglevel shoudbe string"
+      go (PStr t) = return (gt $ T.toLower t)
+      go _        = error "loglevel shoudbe string"
       gt "debug" = LevelDebug
       gt "info"  = LevelInfo
       gt "warn"  = LevelWarn

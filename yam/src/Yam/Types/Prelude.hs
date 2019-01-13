@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ImplicitParams       #-}
 {-# LANGUAGE UndecidableInstances #-}
 module Yam.Types.Prelude(
@@ -5,10 +6,13 @@ module Yam.Types.Prelude(
   , showText
   , throwS
   , whenException
+#if MIN_VERSION_salak(0,2,1)
+#else
   , (.>>)
   , (.?>)
   , (.?=)
   , (.|=)
+#endif
   , LogFunc
   , Default(..)
   , Text
@@ -57,11 +61,16 @@ import           Data.Salak
     ( FromProperties (..)
     , Properties
     , Property (..)
-    , Return (..)
+    , Return
     , defaultPropertiesWithFile
+#if MIN_VERSION_salak(0,2,1)
+    , (.>>)
+    , (.?=)
+    , (.?>)
+    , (.|=)
+#endif
     )
-import qualified Data.Salak                         as S
-import           Data.Text                          (Text, pack, unpack)
+import           Data.Text                          (Text, pack)
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                    (Key, Vault, newKey)
 import           Data.Version
@@ -74,29 +83,35 @@ import           Servant.Server.Internal.ServantErr
 import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
 
+#if MIN_VERSION_salak(0,2,1)
+#else
+import qualified Data.Salak                         as S
+import           Data.Text                          (unpack)
+
 infixl 5 .?>
 (.?>) :: FromProperties a => Properties -> Text -> Return a
 (.?>) = flip S.lookup'
 
 infixl 5 .|=
 (.|=) :: Return a -> a -> a
-(.|=) (OK   a) _ = a
-(.|=) (Fail e) _ = error e
-(.|=) _        d = d
+(.|=) (S.OK   a) _ = a
+(.|=) (S.Fail e) _ = error e
+(.|=) _        d   = d
 
 infixl 5 .?=
 (.?=) :: Return a -> a -> Return a
-(.?=) a b = OK (a .|= b)
+(.?=) a b = S.OK (a .|= b)
 
 infixl 5 .>>
 (.>>) :: FromProperties a => Properties -> Text -> a
 (.>>) p k = case p .?> k of
-  OK v   -> v
-  Empty  -> case fromProperties S.empty of
-    (OK   a) -> a
-    (Fail e) -> error e
-    _        -> error $ "Config " <> unpack k <> " not found"
-  Fail e -> error e
+  S.OK v   -> v
+  S.Empty  -> case fromProperties S.empty of
+    (S.OK   a) -> a
+    (S.Fail e) -> error e
+    _          -> error $ "Config " <> unpack k <> " not found"
+  S.Fail e -> error e
+#endif
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 

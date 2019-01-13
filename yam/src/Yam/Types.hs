@@ -22,8 +22,8 @@ newtype App a = App { runApp' :: ReaderT Env IO a } deriving
     , MonadIO
     , MonadReader Env)
 
-runApp :: Env -> App a -> IO a
-runApp e a = runReaderT (runApp' a) e
+runApp :: MonadIO m => Env -> App a -> m a
+runApp e a = liftIO $ runReaderT (runApp' a) e
 
 runTestApp :: Key a -> a -> App b -> IO b
 runTestApp k v a = runApp def $ withAttr k v a

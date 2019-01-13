@@ -31,7 +31,7 @@ instance FromProperties TraceNotifyType where
   fromProperties = fromProperties >=> go
     where
       go :: Property -> Return TraceNotifyType
-      go _ = OK NoTracer
+      go _ = return NoTracer
 
 instance FromProperties TraceConfig where
   fromProperties p = TraceConfig
