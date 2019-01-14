@@ -14,7 +14,7 @@ extra-source-files:
 
 dependencies:
   - base >= 4.11 && < 5
-  - salak >= 0.1.4 && < 0.3
+  - salak >= 0.1.6 && < 0.3
   - text
   - bytestring
   - base16-bytestring

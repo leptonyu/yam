@@ -7,7 +7,7 @@ module Yam.Types.Prelude(
   , throwS
   , randomCode
   , whenException
-#if !MIN_VERSION_salak(0,2,1)
+#if !MIN_VERSION_salak(0,1,7)
   , (.>>)
   , (.?>)
   , (.?=)
@@ -78,7 +78,7 @@ import           Servant.Server.Internal.ServantErr
 import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
 
-#if MIN_VERSION_salak(0,2,1)
+#if MIN_VERSION_salak(0,1,7)
 import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
 #else
 import qualified Data.Salak                         as S
