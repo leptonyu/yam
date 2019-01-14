@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 66cb42b9ae6fc25089cd57661d1d8572abcc1d4e9cac630368592c7819b1a0ea
+-- hash: 25a1304358621c027637e07bcac688002c7a91c75f54a69674d7a8094123a9ff
 
 name:           yam
 version:        0.5.8
@@ -69,8 +69,8 @@ library
     , unliftio-core
     , unordered-containers
     , vault
+    , vector
     , wai
-    , wai-extra
     , warp
   default-language: Haskell2010
 
@@ -127,7 +127,7 @@ test-suite spec
     , unliftio-core
     , unordered-containers
     , vault
+    , vector
     , wai
-    , wai-extra
     , warp
   default-language: Haskell2010

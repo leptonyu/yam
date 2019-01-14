@@ -110,7 +110,7 @@ traceMw env' notify app req resH = do
           v'  = L.insert spanKey s v
           rh' = resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
           c e = do
-            runApp env (logError $ showText e)
+            runApp env { reqAttributes = Just v} (logError $ showText e)
             rh' $ whenException e
       liftIO (app req {vault = v'} rh' `catch` c)
 

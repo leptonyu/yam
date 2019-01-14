@@ -31,7 +31,6 @@ dependencies:
   - monad-logger
   - fast-logger
   - wai
-  - wai-extra
   - warp
   - http-types
   - servant-client
@@ -40,6 +39,7 @@ dependencies:
   - servant-swagger-ui
   - swagger2
   - http-client
+  - vector
 
 library:
   source-dirs: src

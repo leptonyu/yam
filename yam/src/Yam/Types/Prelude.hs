@@ -5,9 +5,9 @@ module Yam.Types.Prelude(
     randomString
   , showText
   , throwS
+  , randomCode
   , whenException
-#if MIN_VERSION_salak(0,2,1)
-#else
+#if !MIN_VERSION_salak(0,2,1)
   , (.>>)
   , (.?>)
   , (.?=)
@@ -63,16 +63,11 @@ import           Data.Salak
     , Property (..)
     , Return
     , defaultPropertiesWithFile
-#if MIN_VERSION_salak(0,2,1)
-    , (.>>)
-    , (.?=)
-    , (.?>)
-    , (.|=)
-#endif
     )
 import           Data.Text                          (Text, pack)
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                    (Key, Vault, newKey)
+import qualified Data.Vector                        as V
 import           Data.Version
 import           Data.Word
 import           GHC.Stack
@@ -84,6 +79,7 @@ import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
 
 #if MIN_VERSION_salak(0,2,1)
+import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
 #else
 import qualified Data.Salak                         as S
 import           Data.Text                          (unpack)
@@ -135,3 +131,10 @@ throwS e msg = do
 
 whenException :: SomeException -> Response
 whenException e = responseServantErr $ fromMaybe err400 (fromException e :: Maybe ServantErr)
+
+-- | Utility
+randomCode :: V.Vector Char -> Int -> IO String
+randomCode seed v = do
+  let l = V.length seed
+  vs <- sequence $  replicate v $ uniformR (0,l-1) randomGen
+  return $ (seed V.!) <$> vs
