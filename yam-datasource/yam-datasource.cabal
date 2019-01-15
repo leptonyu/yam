@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: cf4256956a3431471c955a9292073fa9d2285a6f80a2fcf53a28837f830b2675
+-- hash: c630a14036794316a46f800635d4b1ccaf306131f5de77aae22a9637ad29ecec
 
 name:           yam-datasource
-version:        0.5.10
+version:        0.5.11
 synopsis:       Yam DataSource Middleware
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam-datasource#readme
