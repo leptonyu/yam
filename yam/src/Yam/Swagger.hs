@@ -2,7 +2,6 @@
 module Yam.Swagger(
     SwaggerConfig(..)
   , serveWithContextAndSwagger
-  , module Control.Lens
   ) where
 
 import           Control.Lens       hiding (Context, Empty, allOf, (.=))

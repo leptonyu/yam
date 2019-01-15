@@ -1,5 +1,6 @@
 module Main where
 
+import           Control.Lens
 import           Data.Swagger  hiding (version)
 import qualified Data.Text     as T
 import           Paths_example (version)

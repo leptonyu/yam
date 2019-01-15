@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 408d5a40b074200f17173c60bbb60f7d51fc07e2fd3773e3b5993cf94716e8a1
+-- hash: f6e5da596da71ad9695495048daa9352b5f47ce5bd835ed1ef48260681d5af5a
 
 name:           yam
-version:        0.5.8
+version:        0.5.9
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
@@ -32,10 +32,10 @@ library
       Yam.Middleware.Client
       Yam.Swagger
       Yam.Types
-      Yam.Types.Prelude
-      Yam.Types.Env
       Yam.Logger
   other-modules:
+      Yam.Types.Prelude
+      Yam.Types.Env
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer

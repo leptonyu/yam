@@ -1,4 +1,7 @@
-module Yam.Middleware.Default where
+module Yam.Middleware.Default(
+  -- * Default Middleware
+    defaultMiddleware
+  ) where
 
 import           Yam.Middleware
 import           Yam.Middleware.Client

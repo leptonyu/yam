@@ -1,5 +1,5 @@
 name:                yam
-version:             0.5.8
+version:             0.5.9
 synopsis:            Yam Web
 #description:
 homepage:            https://github.com/leptonyu/yam/yam#readme
@@ -53,10 +53,11 @@ library:
     - Yam.Middleware.Client 
     - Yam.Swagger
     - Yam.Types
-    - Yam.Types.Prelude
-    - Yam.Types.Env
     - Yam.Logger
   other-modules:
+    - Yam.Types.Prelude
+    - Yam.Types.Env
+    
     - Data.Opentracing
     - Data.Opentracing.Types
     - Data.Opentracing.Tracer

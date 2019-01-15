@@ -26,6 +26,7 @@ executables:
       - http-types
       - text
       - swagger2
+      - lens
 
 defaults:
   local: ../defaults.yaml

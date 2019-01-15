@@ -1,13 +1,18 @@
 {-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ImplicitParams       #-}
 {-# LANGUAGE UndecidableInstances #-}
+
+#define IS_NEW() ((MIN_VERSION_salak(0,1,7) && !MIN_VERSION_salak(0.2.0)) || MIN_VERSION_salak(0.2.1))
+
 module Yam.Types.Prelude(
+  -- * Utilities
     randomString
   , showText
   , throwS
   , randomCode
   , whenException
-#if !MIN_VERSION_salak(0,1,7)
+  -- * Reexport Functions
+#if !IS_NEW
   , (.>>)
   , (.?>)
   , (.?=)
@@ -78,7 +83,7 @@ import           Servant.Server.Internal.ServantErr
 import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
 
-#if MIN_VERSION_salak(0,1,7)
+#if IS_NEW
 import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
 #else
 import qualified Data.Salak                         as S

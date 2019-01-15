@@ -1,8 +1,11 @@
 module Yam(
+  -- * Application
     module Yam.Internal
-  , module Yam.Logger
   , module Yam.Types
+  -- * Modules
+  , module Yam.Logger
   , module Yam.Swagger
+  -- * Middlewares
   , module Yam.Middleware
   , module Yam.Middleware.Auth
   , module Yam.Middleware.Client

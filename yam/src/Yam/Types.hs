@@ -1,5 +1,5 @@
 module Yam.Types(
-  -- * AppM Monad
+  -- * App Monad
     App
   , runApp
   , runTestApp

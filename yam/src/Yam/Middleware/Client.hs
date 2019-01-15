@@ -1,4 +1,5 @@
 module Yam.Middleware.Client(
+  -- * Client Middleware
     ClientConfig(..)
   , runClient
   , clientMiddleware

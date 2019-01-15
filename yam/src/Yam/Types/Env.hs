@@ -1,4 +1,5 @@
 module Yam.Types.Env(
+  -- * Environment
     AppConfig(..)
   , Env(..)
   , getAttr

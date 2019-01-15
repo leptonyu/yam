@@ -1,4 +1,10 @@
-module Yam.Middleware.Auth where
+module Yam.Middleware.Auth(
+  -- * Auth Middleware
+    authAppMiddleware
+  , CheckAuth
+  , HasAuthKey(..)
+  , AuthChecker(..)
+  ) where
 import           Control.Lens
 import           Data.Swagger
 import qualified Data.Vault.Lazy                            as L
