@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP            #-}
 {-# LANGUAGE ImplicitParams #-}
 module Yam.Middleware(
     AppMiddleware(..)
@@ -12,11 +13,17 @@ import           Yam.Types
 -- | Application Middleware
 newtype AppMiddleware = AppMiddleware {runAM :: Env -> ((Env, Middleware)-> LoggingT IO ()) -> LoggingT IO ()}
 
-instance Semigroup AppMiddleware where
-  (AppMiddleware am) <> (AppMiddleware bm) = AppMiddleware $ \e f -> am e $ \(e', mw) -> bm e' $ \(e'',mw') -> f (e'', mw . mw')
-
 instance Monoid AppMiddleware where
   mempty = AppMiddleware $ \a f -> f (a,id)
+#if __GLASGOW_HASKELL__ >= 804
+instance Semigroup AppMiddleware where
+  (<>) = _append
+#else
+  mappend = _append
+#endif
+
+
+_append (AppMiddleware am) (AppMiddleware bm) = AppMiddleware $ \e f -> am e $ \(e', mw) -> bm e' $ \(e'',mw') -> f (e'', mw . mw')
 
 -- | Simple AppMiddleware
 simpleAppMiddleware :: HasCallStack => (Bool, Text) -> Key a -> a -> AppMiddleware

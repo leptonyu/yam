@@ -10,12 +10,6 @@ module Yam.Types.Prelude(
   , randomCode
   , whenException
   -- * Reexport Functions
-#if !MIN_VERSION_salak(0,1,7)
-  , (.>>)
-  , (.?>)
-  , (.?=)
-  , (.|=)
-#endif
   , LogFunc
   , Default(..)
   , Text
@@ -29,6 +23,7 @@ module Yam.Types.Prelude(
   , throw
   , try
   , catch
+  , (<>)
   , module Data.Proxy
   , module Data.Vault.Lazy
   , module Data.Maybe
@@ -59,6 +54,7 @@ import qualified Data.ByteString.Lazy               as L
 import           Data.Default
 import           Data.Function
 import           Data.Maybe
+import           Data.Monoid                        ((<>))
 import           Data.Proxy
 import           Data.Salak
     ( FromProperties (..)
@@ -67,6 +63,7 @@ import           Data.Salak
     , Return
     , defaultPropertiesWithFile
     )
+import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
 import           Data.Text                          (Text, pack)
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                    (Key, Vault, newKey)
@@ -80,37 +77,6 @@ import           Servant
 import           Servant.Server.Internal.ServantErr
 import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
-
-#if MIN_VERSION_salak(0,1,7)
-import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
-#else
-import qualified Data.Salak                         as S
-import           Data.Text                          (unpack)
-
-infixl 5 .?>
-(.?>) :: FromProperties a => Properties -> Text -> Return a
-(.?>) = flip S.lookup'
-
-infixl 5 .|=
-(.|=) :: Return a -> a -> a
-(.|=) (S.OK   a) _ = a
-(.|=) (S.Fail e) _ = error e
-(.|=) _        d   = d
-
-infixl 5 .?=
-(.?=) :: Return a -> a -> Return a
-(.?=) a b = S.OK (a .|= b)
-
-infixl 5 .>>
-(.>>) :: FromProperties a => Properties -> Text -> a
-(.>>) p k = case p .?> k of
-  S.OK v   -> v
-  S.Empty  -> case fromProperties S.empty of
-    (S.OK   a) -> a
-    (S.Fail e) -> error e
-    _          -> error $ "Config " <> unpack k <> " not found"
-  S.Fail e -> error e
-#endif
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 

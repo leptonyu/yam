@@ -1,4 +1,4 @@
-ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-orphans -fno-warn-missing-signatures
+ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
 
 default-extensions:
   - AutoDeriveTypeable

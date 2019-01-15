@@ -13,7 +13,7 @@ extra-source-files:
 - yam_test.yml
 
 dependencies:
-  - base >= 4.11 && < 5
+  - base >= 4.9 && < 5
   - salak >= 0.1.6 && < 0.3
   - text
   - bytestring
