@@ -12,6 +12,7 @@ module Yam.Middleware.Trace(
 
 import qualified Data.HashMap.Lazy as HM
 import           Data.Opentracing
+import           Data.Salak
 import qualified Data.Text         as T
 import qualified Data.Vault.Lazy   as L
 import           System.IO.Unsafe  (unsafePerformIO)
@@ -46,11 +47,11 @@ notifier :: TraceNotifyType -> Span -> App ()
 notifier _ _ = return ()
 
 {-# NOINLINE spanContextKey #-}
-spanContextKey :: Key SpanContext
+spanContextKey :: L.Key SpanContext
 spanContextKey = unsafePerformIO newKey
 
 {-# NOINLINE spanKey #-}
-spanKey :: Key Span
+spanKey :: L.Key Span
 spanKey = unsafePerformIO newKey
 
 instance MonadTracer App where
@@ -82,11 +83,11 @@ hSampled = "X-B3-Sampled"
 parseSpan :: RequestHeaders -> Env -> IO Env
 parseSpan headers env =
   let sc = fromMaybe (SpanContext "" HM.empty) $ getAttr spanContextKey env
-  in case lookup hTraceId headers of
+  in case Prelude.lookup hTraceId headers of
       Just tid -> let sc' = sc { traceId = tid }
                   in return $ env
                       & setAttr spanContextKey      sc'
-                      & go (fromMaybe (traceId sc') $ lookup hSpanId headers) sc'
+                      & go (fromMaybe (traceId sc') $ Prelude.lookup hSpanId headers) sc'
       _        -> do
         c <- newContext
         return $ setAttr spanContextKey c env

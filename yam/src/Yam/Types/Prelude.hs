@@ -30,7 +30,6 @@ module Yam.Types.Prelude(
   , module Data.Word
   , module Data.Text.Encoding
   , module Data.Function
-  , module Data.Salak
   , module Data.Version
   , module Control.Applicative
   , module Control.Monad
@@ -56,14 +55,6 @@ import           Data.Function
 import           Data.Maybe
 import           Data.Monoid                        ((<>))
 import           Data.Proxy
-import           Data.Salak
-    ( FromProperties (..)
-    , Properties
-    , Property (..)
-    , Return
-    , defaultPropertiesWithFile
-    )
-import           Data.Salak                         ((.>>), (.?=), (.?>), (.|=))
 import           Data.Text                          (Text, pack)
 import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
 import           Data.Vault.Lazy                    (Key, Vault, newKey)

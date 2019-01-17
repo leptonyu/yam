@@ -7,6 +7,7 @@ module Yam.Types.Env(
   , setAttr
   ) where
 
+import           Data.Salak
 import qualified Data.Vault.Lazy   as L
 import           Yam.Types.Prelude
 
@@ -34,13 +35,13 @@ data Env = Env
 instance Default Env where
   def = Env L.empty Nothing def
 
-getAttr :: Key a -> Env -> Maybe a
+getAttr :: L.Key a -> Env -> Maybe a
 getAttr k Env{..} = (reqAttributes >>= L.lookup k) <|> L.lookup k attributes
 
-reqAttr :: Default a => Key a -> Env -> a
+reqAttr :: Default a => L.Key a -> Env -> a
 reqAttr k = fromMaybe def . getAttr k
 
-setAttr :: Key a -> a -> Env -> Env
+setAttr :: L.Key a -> a -> Env -> Env
 setAttr k v Env{..} = case reqAttributes of
   Just av -> Env attributes (Just $ L.insert k v av)     application
   _       -> Env (L.insert k v attributes) reqAttributes application

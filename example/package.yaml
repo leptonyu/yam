@@ -16,6 +16,9 @@ dependencies:
 
 executables:
   yam:
+    when:
+    - condition: os(linux)
+      ld-options:     -static
     source-dirs:      src
     main:             Main.hs
     dependencies:

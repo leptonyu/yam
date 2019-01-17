@@ -6,6 +6,7 @@ module Yam.Swagger(
 
 import           Control.Lens       hiding (Context, Empty, allOf, (.=))
 import           Data.Reflection
+import           Data.Salak
 import           Data.Swagger       hiding (name, port)
 import qualified Data.Swagger       as S
 import           GHC.TypeLits

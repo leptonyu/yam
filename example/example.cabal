@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 0deafb9c0f2fcacab0c6cd729c0ccc4c31cf4540ef14d8f761a6a508b041d5ca
+-- hash: 9279cadf33e37098abbfb011af0d3d08d8d4c7a3b3b891b668fadc7a82e99e3d
 
 name:           example
 version:        0.1.0.0
@@ -37,4 +37,6 @@ executable yam
     , swagger2
     , text
     , yam
+  if os(linux)
+    ld-options: -static
   default-language: Haskell2010

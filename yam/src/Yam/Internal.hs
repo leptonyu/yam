@@ -6,6 +6,7 @@ module Yam.Internal(
   , start
   ) where
 
+import           Data.Salak
 import qualified Data.Vault.Lazy          as L
 import           Network.Wai.Handler.Warp
 import           Servant

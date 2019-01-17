@@ -10,7 +10,9 @@ module Yam.Logger(
   , LogConfig(..)
   ) where
 
+import           Data.Salak
 import qualified Data.Text             as T
+import qualified Data.Vault.Lazy       as L
 import           System.IO.Unsafe      (unsafePerformIO)
 import           System.Log.FastLogger
 import           Yam.Types.Env
@@ -76,11 +78,11 @@ addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)
 
 {-# NOINLINE loggerKey #-}
-loggerKey :: Key LogFunc
+loggerKey :: L.Key LogFunc
 loggerKey = unsafePerformIO newKey
 
 {-# NOINLINE extensionLogKey #-}
-extensionLogKey :: Key Text
+extensionLogKey :: L.Key Text
 extensionLogKey = unsafePerformIO newKey
 
 setExtendLog :: (Text -> Text) -> Env -> Env
