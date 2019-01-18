@@ -1,7 +1,10 @@
 #!/bin/bash
 PRG=`readlink "$0"`
+if [ -z "$PRG" ]; then
+  PRG=$0
+fi
 ROOT=`dirname "$PRG"`
-cd "$ROOT"
+cd "$ROOT/.."
 
 if [ -z "$HACKAGE_USER" -o -z "$HACKAGE_PASS" ]; then
   echo "HACKAGE_USER or HACKAGE_PASS not set"

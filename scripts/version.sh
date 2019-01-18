@@ -1,7 +1,10 @@
 #!/bin/bash
 PRG=`readlink "$0"`
+if [ -z "$PRG" ]; then
+  PRG=$0
+fi
 ROOT=`dirname "$PRG"`
-cd "$ROOT"
+cd "$ROOT/.."
 
 if echo "$1" | grep -vq '[0-9][0-9]*\(\.[0-9][0-9]*\)*' ; then
   echo "version not set"
