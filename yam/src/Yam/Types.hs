@@ -11,6 +11,8 @@ module Yam.Types(
   , module Yam.Types.Prelude
   ) where
 
+import           Data.Menshen
+import           Servant           (err400)
 import           Yam.Logger
 import           Yam.Types.Env
 import           Yam.Types.Prelude
@@ -21,6 +23,9 @@ newtype App a = App { runApp' :: ReaderT Env IO a } deriving
     , Monad
     , MonadIO
     , MonadReader Env)
+
+instance HasValid App where
+  invalid a = throwS err400 (pack $ toI18n a)
 
 runApp :: MonadIO m => Env -> App a -> m a
 runApp e a = liftIO $ runReaderT (runApp' a) e

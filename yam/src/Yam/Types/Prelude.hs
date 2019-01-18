@@ -46,6 +46,7 @@ import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
+import           Data.Aeson
 import qualified Data.Binary                        as B
 import           Data.ByteString                    (ByteString)
 import qualified Data.ByteString.Base16.Lazy        as B16
@@ -83,11 +84,17 @@ randomString = L.toStrict . B16.encode . B.encode <$> (uniform randomGen :: IO W
 showText :: Show a => a -> Text
 showText = pack . show
 
+data WebErrResult = WebErrResult
+  { message :: Text
+  }
+
+instance ToJSON WebErrResult where
+  toJSON WebErrResult{..} = object [ "message" .= message ]
+
 throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServantErr -> Text -> m a
 throwS e msg = do
   logErrorCS ?callStack msg
-  liftIO $ throw e
-
+  liftIO $ throw e { errBody = encode $ WebErrResult msg}
 
 whenException :: SomeException -> Response
 whenException e = responseServantErr $ fromMaybe err400 (fromException e :: Maybe ServantErr)

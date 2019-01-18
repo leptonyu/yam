@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 597fd54bec1943d647a444d3d3f7ca91277449006dc578080eb52bc42229c52b
+-- hash: 2d7c2e16d7fa231b0486da7b9261f1d0616627e44ea9f502a143fd76816abbf5
 
 name:           yam
 version:        0.5.12
@@ -45,7 +45,8 @@ library
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
-      base >=4.9 && <5
+      aeson
+    , base >=4.9 && <5
     , base16-bytestring
     , binary
     , bytestring
@@ -54,6 +55,7 @@ library
     , http-client
     , http-types
     , lens
+    , menshen
     , monad-logger
     , mtl
     , mwc-random
@@ -102,6 +104,7 @@ test-suite spec
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck
+    , aeson
     , base >=4.9 && <5
     , base16-bytestring
     , binary
@@ -112,6 +115,7 @@ test-suite spec
     , http-client
     , http-types
     , lens
+    , menshen
     , monad-logger
     , mtl
     , mwc-random
