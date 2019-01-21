@@ -21,7 +21,7 @@ startYam
   :: forall api. (HasSwagger api, HasServer api '[Env])
   => AppConfig
   -> SwaggerConfig
-  -> LogConfig
+  -> IO LogConfig
   -> Bool
   -> Version
   -> [AppMiddleware]
@@ -70,8 +70,11 @@ start
   -> Proxy api
   -> ServerT api App
   -> IO ()
-start p = startYam
-  (p .>> "yam.application")
-  (p .>> "yam.swagger"    )
-  (p .>> "yam.logging"    )
-  (p .?> "yam.middleware.default.enabled" .|= True)
+start p a b c d = do
+  (lc,s) <- runLoader p $ (,) <$> load "yam.logging" <*> askSetProperties
+  startYam
+    (p .>> "yam.application")
+    (p .>> "yam.swagger"    )
+    lc
+    (p .?> "yam.middleware.default.enabled" .|= True)
+    a b c d

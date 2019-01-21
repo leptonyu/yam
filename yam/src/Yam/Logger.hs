@@ -57,9 +57,10 @@ instance FromProperties LogConfig where
     <*> p .?> "max-history" .?= rotateHistory def
     <*> p .?> "level"       .?= level         def
 
-newLogger :: Text -> LogConfig -> IO (LogFunc, IO ())
-newLogger name LogConfig{..} = do
-  tc        <- newTimeCache "%Y-%m-%d %T"
+newLogger :: Text -> IO LogConfig -> IO (LogFunc, IO ())
+newLogger name lc = do
+  LogConfig{..} <- lc
+  tc            <- newTimeCache "%Y-%m-%d %T"
   let ft = if file == ""
             then LogStdout $ fromIntegral bufferSize
             else LogFile (FileLogSpec file (toInteger maxSize) (fromIntegral rotateHistory)) $ fromIntegral bufferSize
@@ -67,11 +68,13 @@ newLogger name LogConfig{..} = do
   (l,close) <- newTimedFastLogger tc ft
   return (toLogger ln l, close)
   where
-    toLogger xn f Loc{..} _ ll s = when (level <= ll) $ f $ \t ->
-      let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
-      in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
+    toLogger xn f Loc{..} _ ll s = do
+      c <- lc
+      when (level c <= ll) $ f $ \t ->
+        let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
+        in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
-withLogger :: Text -> LogConfig -> LoggingT IO a -> IO a
+withLogger :: Text -> IO LogConfig -> LoggingT IO a -> IO a
 withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT action f
 
 addTrace :: LogFunc -> Text -> LogFunc

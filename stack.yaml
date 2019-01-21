@@ -42,7 +42,7 @@ packages:
 # extra-deps: []
 extra-deps:
   - menshen-0.0.1
-  - salak-0.1.8
+  - salak-0.2.3
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

@@ -45,6 +45,7 @@ service = userService :<|> errorService :<|> servantService
 userService :: User -> App Text
 userService token = do
   logInfo $ "Hello: " <> user token
+  logWarn $ "Hello: " <> user token
   return "Hello"
 
 errorService :: App Text
