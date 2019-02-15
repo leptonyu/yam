@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a727046104b180c977d08c938599029b893ee11828791f94878df9b7863cb646
+-- hash: 6cd36e3957aae6913771ae7b26195f3e7aff51bd690559ad84ec73cc4ef1c7bd
 
 name:           yam
-version:        0.5.12
+version:        0.5.13
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
@@ -52,7 +52,7 @@ library
     , bytestring
     , data-default
     , fast-logger
-    , http-client >=0.5.14
+    , http-client >=0.5.14 && <0.7
     , http-types
     , lens
     , menshen
@@ -112,7 +112,7 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
-    , http-client >=0.5.14
+    , http-client >=0.5.14 && <0.7
     , http-types
     , lens
     , menshen

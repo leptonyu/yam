@@ -1,5 +1,5 @@
 name:                yam
-version:             0.5.12
+version:             0.5.13
 synopsis:            Yam Web
 #description:
 homepage:            https://github.com/leptonyu/yam/yam#readme
@@ -40,7 +40,7 @@ dependencies:
   - servant-swagger
   - servant-swagger-ui
   - swagger2
-  - http-client >=0.5.14
+  - http-client >=0.5.14 && < 0.7
   - vector
 
 library:
