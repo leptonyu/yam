@@ -30,6 +30,8 @@ executables:
       - text
       - swagger2
       - lens
+      - resource-pool
+      - vault
 
 defaults:
   local: ../defaults.yaml

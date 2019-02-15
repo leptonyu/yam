@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9279cadf33e37098abbfb011af0d3d08d8d4c7a3b3b891b668fadc7a82e99e3d
+-- hash: 91e56923dd614a6390cf79e2b1b3666501d06cbbb2726f1422b9df811c815d96
 
 name:           example
 version:        0.1.0.0
@@ -32,10 +32,12 @@ executable yam
     , http-types
     , lens
     , monad-logger
+    , resource-pool
     , salak
     , servant-server
     , swagger2
     , text
+    , vault
     , yam
   if os(linux)
     ld-options: -static

@@ -40,7 +40,7 @@ dependencies:
   - servant-swagger
   - servant-swagger-ui
   - swagger2
-  - http-client
+  - http-client >=0.5.14
   - vector
 
 library:

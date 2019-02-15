@@ -71,7 +71,7 @@ start
   -> ServerT api App
   -> IO ()
 start p a b c d = do
-  (lc,s) <- runLoader p $ (,) <$> load "yam.logging" <*> askSetProperties
+  (lc,_) <- runLoader p $ (,) <$> load "yam.logging" <*> askSetProperties
   startYam
     (p .>> "yam.application")
     (p .>> "yam.swagger"    )

@@ -4,6 +4,7 @@ module Yam.Middleware(
     AppMiddleware(..)
   , simpleAppMiddleware
   , simpleWebMiddleware
+  , simplePoolMiddleware
   , runMiddleware
   ) where
 
@@ -30,7 +31,7 @@ simpleAppMiddleware :: HasCallStack => (Bool, Text) -> Key a -> a -> AppMiddlewa
 simpleAppMiddleware (enabled,amname) k v =
   v `seq` if enabled
     then AppMiddleware $ \e f -> do
-      logInfoCS ?callStack $ amname <> " enabled"
+      logInfoCS ?callStack $ "app:" <> amname <> " enabled"
       f (setAttr k v e, id)
     else mempty
 
@@ -38,8 +39,17 @@ simpleWebMiddleware :: HasCallStack => (Bool, Text) -> Middleware -> AppMiddlewa
 simpleWebMiddleware (enabled,amname) m =
   if enabled
     then AppMiddleware $ \e f -> do
-      logInfoCS ?callStack $ amname <> " enabled"
+      logInfoCS ?callStack $ "web:" <> amname <> " enabled"
       f (e,m)
+    else mempty
+
+simplePoolMiddleware :: HasCallStack => (Bool, Text) -> Key a -> App a -> (a -> App ()) -> AppMiddleware
+simplePoolMiddleware (enabled, amname) key open close =
+  if enabled
+    then AppMiddleware $ \e f -> do
+      logInfoCS ?callStack $ "pool:" <> amname <> " enabled"
+      lf <- askLoggerIO
+      liftIO $ bracket (runApp e open) (runApp e . close) $ \a -> runLoggingT (f (setAttr key a e, id)) lf
     else mempty
 
 runMiddleware :: MonadIO m => AppMiddleware -> App a -> m ()

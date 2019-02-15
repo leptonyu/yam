@@ -1,11 +1,14 @@
 module Main where
 
 import           Control.Lens
-import           Data.Salak    (defaultPropertiesWithFile)
-import           Data.Swagger  hiding (version)
-import qualified Data.Text     as T
-import           Paths_example (version)
+import           Data.Pool
+import           Data.Salak       (defaultPropertiesWithFile)
+import           Data.Swagger     hiding (version)
+import qualified Data.Text        as T
+import qualified Data.Vault.Lazy  as L
+import           Paths_example    (version)
 import           Servant
+import           System.IO.Unsafe (unsafePerformIO)
 import           Yam
 
 newtype User = User { user :: Text } deriving (Eq, Show)
@@ -46,6 +49,7 @@ userService :: User -> App Text
 userService token = do
   logInfo $ "Hello: " <> user token
   logWarn $ "Hello: " <> user token
+  runPool (return ())
   return "Hello"
 
 errorService :: App Text
@@ -54,7 +58,25 @@ errorService = logError "No" >> return "No"
 servantService :: App Text
 servantService = throwS err401 "Servant"
 
+poolMW :: AppMiddleware
+poolMW = simplePoolMiddleware (True, "test") poolKey open close
+  where
+    open = do
+      lf <- askLoggerIO
+      let l m = runLoggingT (logInfo m) lf
+      liftIO $ createPool (l "start") (\_ -> l "end") 1 5 10
+    close = liftIO . destroyAllResources
+
+{-# NOINLINE poolKey #-}
+poolKey :: L.Key (Pool ())
+poolKey = unsafePerformIO newKey
+
+runPool :: App () -> App ()
+runPool a = do
+  p <- requireAttr poolKey
+  withRunInIO $ \f -> withResource p $ f . (\_ -> a)
+
 main :: IO ()
 main = do
   p <- defaultPropertiesWithFile "yam_test.yml"
-  start p version [authAppMiddleware checker] (Proxy :: Proxy UserApi) service
+  start p version [poolMW, authAppMiddleware checker] (Proxy :: Proxy UserApi) service

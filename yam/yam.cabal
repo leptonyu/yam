@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c423e1211f4a928391638498d87eb9aef7ac0ca7e21bd7911a7f879f48e9928a
+-- hash: a727046104b180c977d08c938599029b893ee11828791f94878df9b7863cb646
 
 name:           yam
 version:        0.5.12
@@ -52,7 +52,7 @@ library
     , bytestring
     , data-default
     , fast-logger
-    , http-client
+    , http-client >=0.5.14
     , http-types
     , lens
     , menshen
@@ -112,7 +112,7 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
-    , http-client
+    , http-client >=0.5.14
     , http-types
     , lens
     , menshen

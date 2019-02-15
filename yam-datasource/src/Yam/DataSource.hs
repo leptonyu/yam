@@ -14,7 +14,6 @@ module Yam.DataSource(
   , selectValue
   ) where
 
-import           Control.Exception       (bracket)
 import           Control.Monad.IO.Unlift
 import           Data.Acquire            (withAcquire)
 import           Data.Conduit
@@ -24,7 +23,7 @@ import           Database.Persist.Sql    hiding (Key)
 import           System.IO.Unsafe        (unsafePerformIO)
 import           Yam                     hiding (LogFunc)
 
-type DataSource = ConnectionPool
+type DataSource = Pool SqlBackend
 
 {-# NOINLINE dataSourceKey #-}
 dataSourceKey :: Key DataSource
@@ -62,18 +61,17 @@ runDB pool db = do
   logger <- askLoggerIO
   withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn db c { connLogFunc = logger }
 
-{-# INLINE runInDB #-}
-runInDB :: LogFunc -> DataSourceProvider -> (DataSource -> IO a) -> IO a
-runInDB logfunc DataSourceProvider{..} action =
-  bracket (runLoggingT datasource logfunc) destroyAllResources $ \ds -> do
-    runLoggingT (runDB ds migration) logfunc
-    action ds
-
 datasourceMiddleware :: Key DataSource -> DataSourceProvider -> AppMiddleware
-datasourceMiddleware k dsp = AppMiddleware $ \env f -> do
-  lf <- askLoggerIO
-  logInfo $ "Datasource " <> dbtype dsp <> " Initialized..."
-  liftIO  $ runInDB lf dsp $ \ds -> runLoggingT (f (setAttr k ds env, id)) lf
+datasourceMiddleware k DataSourceProvider{..} = simplePoolMiddleware (True, "database " <> dbtype) k open (liftIO . destroyAllResources)
+  where
+    {-# INLINE trans #-}
+    trans :: LoggingT IO a -> App a
+    trans a = askLoggerIO >>= liftIO . runLoggingT a
+    {-# INLINE open #-}
+    open = do
+      a <- trans datasource
+      trans $ runDB a migration
+      return a
 
 primaryDatasourceMiddleware = datasourceMiddleware dataSourceKey
 
