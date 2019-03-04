@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 module Yam.Middleware.Auth(
   -- * Auth Middleware
     authAppMiddleware
@@ -9,7 +10,12 @@ import           Control.Lens
 import           Data.Swagger
 import qualified Data.Vault.Lazy                            as L
 import           Servant
+#if MIN_VERSION_servant_server(0,16,0)
+import           Servant.Server.Internal.Delayed
+import           Servant.Server.Internal.DelayedIO
+#else
 import           Servant.Server.Internal.RoutingApplication
+#endif
 import           Servant.Swagger
 import           Servant.Swagger.Internal
 import           System.IO.Unsafe                           (unsafePerformIO)

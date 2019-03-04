@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6cd36e3957aae6913771ae7b26195f3e7aff51bd690559ad84ec73cc4ef1c7bd
+-- hash: 87020f9efaf9ee0741780c782cc2903e6ae25fd1034ce69a2d01e56bdcb528ae
 
 name:           yam
-version:        0.5.13
+version:        0.5.14
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
@@ -62,8 +62,8 @@ library
     , reflection
     , salak >=0.1.8 && <0.3
     , scientific
-    , servant-client
-    , servant-server
+    , servant-client >=0.15 && <0.17
+    , servant-server >=0.15 && <0.17
     , servant-swagger
     , servant-swagger-ui
     , swagger2
@@ -122,8 +122,8 @@ test-suite spec
     , reflection
     , salak >=0.1.8 && <0.3
     , scientific
-    , servant-client
-    , servant-server
+    , servant-client >=0.15 && <0.17
+    , servant-server >=0.15 && <0.17
     , servant-swagger
     , servant-swagger-ui
     , swagger2

@@ -66,9 +66,15 @@ import           GHC.Stack
 import           Network.HTTP.Types
 import           Network.Wai
 import           Servant
-import           Servant.Server.Internal.ServantErr
 import           System.IO.Unsafe                   (unsafePerformIO)
 import           System.Random.MWC
+#if MIN_VERSION_servant_server(0,16,0)
+import           Servant.Server.Internal.ServerError
+type ServantErr = ServerError
+responseServantErr = responseServerError
+#else
+import           Servant.Server.Internal.ServantErr
+#endif
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
