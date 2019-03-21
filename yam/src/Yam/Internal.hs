@@ -28,39 +28,31 @@ startYam
   -> Proxy api
   -> ServerT api App
   -> IO ()
-startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware vs middlewares proxy server
-  = withLogger name logConfig $ do
-      logInfo $ "Start Service [" <> name <> "] ..."
-      logger <- askLoggerIO
-      let act = runAM $ foldr1 (<>) ((if enableDefaultMiddleware then defaultMiddleware else []) <> middlewares)
-      act (putLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
-        let cxt                  = env :. EmptyContext
-            pCxt                 = Proxy :: Proxy '[Env]
-            portText             = showText port
-            proxy'               = Proxy :: Proxy (Vault :> api)
-            server'              = runRequest proxy pCxt server
-            settings             = defaultSettings
-                                 & setPort port
-                                 & setOnException (\_ _ -> return ())
-                                 & setOnExceptionResponse whenException
-                                 & setSlowlorisSize slowlorisSize
-        when enabled $
-          logInfo $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
-        logInfo $ "Servant started on port(s): " <> portText
-        lift $ runSettings settings
-          $ middleware
-          $ serveWithContextAndSwagger sw ac vs proxy' cxt
-          $ hoistServerWithContext proxy' pCxt (transApp env) server'
+startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware vs middlewares proxy server = 
+  withLogger name logConfig $ do
+    logInfo $ "Start Service [" <> name <> "] ..."
+    logger <- askLoggerIO
+    let at = runAM $ foldr1 (<>) ((if enableDefaultMiddleware then defaultMiddleware else []) <> middlewares)
+    at (putLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
+      let cxt      = env :. EmptyContext
+          pCxt     = Proxy :: Proxy '[Env]
+          portText = showText port
+          settings = defaultSettings
+                   & setPort port
+                   & setOnException (\_ _ -> return ())
+                   & setOnExceptionResponse whenException
+                   & setSlowlorisSize slowlorisSize
+      when enabled $
+        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
+      logInfo      $ "Servant started on port(s): "       <> portText
+      lift 
+        $ runSettings settings
+        $ middleware
+        $ serveWithContextAndSwagger sw ac vs (Proxy @(Vault :> api)) cxt
+        $ \v -> hoistServerWithContext proxy pCxt (transApp v env) server
 
-runRequest :: (HasServer api context) => Proxy api -> Proxy context -> ServerT api App -> Vault -> ServerT api App
-runRequest p pc a v = hoistServerWithContext p pc go a
-  where
-    {-# INLINE go #-}
-    go :: App a -> App a
-    go = local (\env -> env { reqAttributes = Just v})
-
-transApp :: Env -> App a -> Handler a
-transApp b c = liftIO $ runApp b c
+transApp :: Vault -> Env -> App a -> Handler a
+transApp v b = liftIO . runApp b . local (\env -> env { reqAttributes = Just v})
 
 start
   :: forall api. (HasSwagger api, HasServer api '[Env])

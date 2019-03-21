@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP                  #-}
+{-# LANGUAGE CPP #-}
 module Yam.Middleware.Auth(
   -- * Auth Middleware
     authAppMiddleware
