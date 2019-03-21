@@ -40,33 +40,33 @@ module Yam.Types.Prelude(
   ) where
 
 import           Control.Applicative
-import           Control.Exception                  hiding (Handler)
+import           Control.Exception              hiding (Handler)
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
 import           Data.Aeson
-import qualified Data.Binary                        as B
-import           Data.ByteString                    (ByteString)
-import qualified Data.ByteString.Base16.Lazy        as B16
-import qualified Data.ByteString.Lazy               as L
+import qualified Data.Binary                    as B
+import           Data.ByteString                (ByteString)
+import qualified Data.ByteString.Base16.Lazy    as B16
+import qualified Data.ByteString.Lazy           as L
 import           Data.Default
 import           Data.Function
 import           Data.Maybe
-import           Data.Monoid                        ((<>))
+import           Data.Monoid                    ((<>))
 import           Data.Proxy
-import           Data.Text                          (Text, pack)
-import           Data.Text.Encoding                 (decodeUtf8, encodeUtf8)
-import           Data.Vault.Lazy                    (Key, Vault, newKey)
-import qualified Data.Vector                        as V
+import           Data.Text                      (Text, pack)
+import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
+import           Data.Vault.Lazy                (Key, Vault, newKey)
+import qualified Data.Vector                    as V
 import           Data.Version
 import           Data.Word
 import           GHC.Stack
 import           Network.HTTP.Types
 import           Network.Wai
 import           Servant
-import           System.IO.Unsafe                   (unsafePerformIO)
+import           System.IO.Unsafe               (unsafePerformIO)
 import           System.Random.MWC
 #if MIN_VERSION_servant_server(0,16,0)
 import           Servant.Server.Internal.ServerError

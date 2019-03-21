@@ -28,14 +28,14 @@ startYam
   -> Proxy api
   -> ServerT api App
   -> IO ()
-startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware vs middlewares proxy server = 
+startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware vs middlewares proxy server =
   withLogger name logConfig $ do
     logInfo $ "Start Service [" <> name <> "] ..."
     logger <- askLoggerIO
     let at = runAM $ foldr1 (<>) ((if enableDefaultMiddleware then defaultMiddleware else []) <> middlewares)
     at (putLogger logger $ Env L.empty Nothing ac) $ \(env, middleware) -> do
       let cxt      = env :. EmptyContext
-          pCxt     = Proxy :: Proxy '[Env]
+          pCxt     = Proxy @'[Env]
           portText = showText port
           settings = defaultSettings
                    & setPort port
@@ -45,10 +45,10 @@ startYam ac@AppConfig{..} sw@SwaggerConfig{..} logConfig enableDefaultMiddleware
       when enabled $
         logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
       logInfo      $ "Servant started on port(s): "       <> portText
-      lift 
+      lift
         $ runSettings settings
         $ middleware
-        $ serveWithContextAndSwagger sw ac vs (Proxy @(Vault :> api)) cxt
+        $ serveWithContextAndSwagger sw (baseInfo name vs port) (Proxy @(Vault :> api)) cxt
         $ \v -> hoistServerWithContext proxy pCxt (transApp v env) server
 
 transApp :: Vault -> Env -> App a -> Handler a
