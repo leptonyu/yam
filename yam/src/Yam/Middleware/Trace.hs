@@ -12,9 +12,9 @@ module Yam.Middleware.Trace(
 
 import qualified Data.HashMap.Lazy as HM
 import           Data.Opentracing
-import           Data.Salak
 import qualified Data.Text         as T
 import qualified Data.Vault.Lazy   as L
+import           Salak
 import           System.IO.Unsafe  (unsafePerformIO)
 import           Yam.Logger
 import           Yam.Middleware
@@ -29,16 +29,13 @@ data TraceNotifyType
   = NoTracer
   deriving (Eq, Show)
 
-instance FromProperties TraceNotifyType where
-  fromProperties = fromProperties >=> go
-    where
-      go :: Property -> Return TraceNotifyType
-      go _ = return NoTracer
+instance FromEnumProp TraceNotifyType where
+  fromEnumProp _ = Right NoTracer
 
-instance FromProperties TraceConfig where
-  fromProperties p = TraceConfig
-    <$> p .?> "enabled" .?= enabled def
-    <*> p .?> "type"    .?= method  def
+instance FromProp TraceConfig where
+  fromProp = TraceConfig
+    <$> "enabled" .?= enabled def
+    <*> "type"    .?= method  def
 
 instance Default TraceConfig where
   def = TraceConfig True NoTracer

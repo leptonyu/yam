@@ -2,7 +2,7 @@ module Main where
 
 import           Control.Lens
 import           Data.Pool
-import           Data.Salak       (defaultPropertiesWithFile)
+import           Salak       
 import           Data.Swagger     hiding (version)
 import qualified Data.Text        as T
 import qualified Data.Vault.Lazy  as L
@@ -78,5 +78,4 @@ runPool a = do
 
 main :: IO ()
 main = do
-  p <- defaultPropertiesWithFile "yam_test.yml"
-  start p version [poolMW, authAppMiddleware checker] (Proxy :: Proxy UserApi) service
+  start def { configName = Just "yam_test.yml" } version [poolMW, authAppMiddleware checker] (Proxy :: Proxy UserApi) service

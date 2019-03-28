@@ -7,7 +7,7 @@ module Yam.Swagger(
 
 import           Control.Lens       hiding (Context)
 import           Data.Reflection
-import           Data.Salak
+import           Salak
 import           Data.Swagger
 import           Servant
 import           Servant.Swagger
@@ -20,14 +20,11 @@ data SwaggerConfig = SwaggerConfig
   , enabled   :: Bool
   } deriving (Eq, Show)
 
-instance Default SwaggerConfig where
-  def = SwaggerConfig "swagger-ui" "swagger-ui.json" True
-
-instance FromProperties SwaggerConfig where
-  fromProperties p = SwaggerConfig
-    <$> p .?> "dir"     .?= urlDir    def
-    <*> p .?> "schema"  .?= urlSchema def
-    <*> p .?> "enabled" .?= enabled   def
+instance FromProp SwaggerConfig where
+  fromProp = SwaggerConfig
+    <$> "dir"     .?= "swagger-ui" 
+    <*> "schema"  .?= "swagger-ui.json"
+    <*> "enabled" .?= True
 
 serveWithContextAndSwagger
   :: forall api context. (HasSwagger api, HasServer api context)

@@ -7,9 +7,9 @@ module Yam.Middleware.Client(
   , BaseUrl
   ) where
 
-import           Data.Salak
 import qualified Data.Vault.Lazy     as L
 import           Network.HTTP.Client
+import           Salak
 import           Servant.Client
 import           System.IO.Unsafe    (unsafePerformIO)
 import           Yam.Middleware
@@ -22,9 +22,8 @@ data ClientConfig = ClientConfig
 instance Default ClientConfig where
   def = ClientConfig True
 
-instance FromProperties ClientConfig where
-  fromProperties p = ClientConfig
-    <$> p .?> "enabled" .?= enabled def
+instance FromProp ClientConfig where
+  fromProp = ClientConfig <$> "enabled" .?= enabled def
 
 {-# NOINLINE managerKey #-}
 managerKey :: L.Key Manager

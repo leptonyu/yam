@@ -10,25 +10,19 @@ module Yam.Logger(
   , LogConfig(..)
   ) where
 
-import           Data.Salak
-import qualified Data.Text             as T
+import           Salak
 import qualified Data.Vault.Lazy       as L
 import           System.IO.Unsafe      (unsafePerformIO)
 import           System.Log.FastLogger
 import           Yam.Types.Env
 import           Yam.Types.Prelude
 
-instance FromProperties LogLevel where
-  fromProperties = fromProperties >=> go
-    where
-      go :: Property -> Return LogLevel
-      go (PStr t) = return (gt $ T.toLower t)
-      go _        = error "loglevel shoudbe string"
-      gt "debug" = LevelDebug
-      gt "info"  = LevelInfo
-      gt "warn"  = LevelWarn
-      gt "error" = LevelError
-      gt _       = LevelOther "fatal"
+instance FromEnumProp LogLevel where
+  fromEnumProp "debug" = Right   LevelDebug
+  fromEnumProp "info"  = Right   LevelInfo
+  fromEnumProp "warn"  = Right   LevelWarn
+  fromEnumProp "error" = Right   LevelError
+  fromEnumProp _       = Right $ LevelOther "fatal"
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
@@ -49,13 +43,13 @@ data LogConfig = LogConfig
 instance Default LogConfig where
   def = LogConfig 4096 "" 10485760 256 LevelInfo
 
-instance FromProperties LogConfig where
-  fromProperties p = LogConfig
-    <$> p .?> "buffer-size" .?= bufferSize    def
-    <*> p .?> "file"        .?= file          def
-    <*> p .?> "max-size"    .?= maxSize       def
-    <*> p .?> "max-history" .?= rotateHistory def
-    <*> p .?> "level"       .?= level         def
+instance FromProp LogConfig where
+  fromProp = LogConfig
+    <$> "buffer-size" .?= bufferSize    def
+    <*> "file"        .?= file          def
+    <*> "max-size"    .?= maxSize       def
+    <*> "max-history" .?= rotateHistory def
+    <*> "level"       .?= level         def
 
 newLogger :: Text -> IO LogConfig -> IO (LogFunc, IO ())
 newLogger name lc = do

@@ -40,6 +40,8 @@ packages:
 # using the same syntax as the packages field.
 # (e.g., acme-missiles-0.3)
 # extra-deps: []
+extra-deps:
+  - salak-0.2.5
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

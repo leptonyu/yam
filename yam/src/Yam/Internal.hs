@@ -6,7 +6,7 @@ module Yam.Internal(
   , start
   ) where
 
-import           Data.Salak
+import           Salak
 import qualified Data.Vault.Lazy          as L
 import           Network.Wai.Handler.Warp
 import           Servant
@@ -56,17 +56,17 @@ transApp v b = liftIO . runApp b . local (\env -> env { reqAttributes = Just v})
 
 start
   :: forall api. (HasSwagger api, HasServer api '[Env])
-  => Properties
+  => PropConfig
   -> Version
   -> [AppMiddleware]
   -> Proxy api
   -> ServerT api App
   -> IO ()
-start p a b c d = do
-  (lc,_) <- runLoader p $ (,) <$> load "yam.logging" <*> askSetProperties
-  startYam
-    (p .>> "yam.application")
-    (p .>> "yam.swagger"    )
-    lc
-    (p .?> "yam.middleware.default.enabled" .|= True)
-    a b c d
+start p a b c d = defaultLoadSalak p $ do
+  al <- require "yam.application"
+  sw <- require "yam.swagger"
+  md <- require "yam.middleware.default.enabled" .?= True
+  reloadable $ do
+    lc <- requireD "yam.logging"
+    liftIO $ startYam al sw lc md a b c d
+

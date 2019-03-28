@@ -7,7 +7,7 @@ module Yam.Types.Env(
   , setAttr
   ) where
 
-import           Data.Salak
+import           Salak
 import qualified Data.Vault.Lazy   as L
 import           Yam.Types.Prelude
 
@@ -17,14 +17,14 @@ data AppConfig = AppConfig
   , slowlorisSize :: Int -- Bytes
   } deriving (Eq, Show)
 
-instance FromProperties AppConfig where
-  fromProperties p = AppConfig
-    <$> p .?> "name"           .?= name def
-    <*> p .?> "port"           .?= port def
-    <*> p .?> "slowloris-size" .?= slowlorisSize def
-
 instance Default AppConfig where
   def = AppConfig "application" 8888 2048
+
+instance FromProp AppConfig where
+  fromProp = AppConfig
+    <$> "name"           .?= name def
+    <*> "port"           .?= port def
+    <*> "slowloris-size" .?= slowlorisSize def
 
 data Env = Env
   { attributes    :: Vault
