@@ -34,8 +34,8 @@ instance FromEnumProp TraceNotifyType where
 
 instance FromProp TraceConfig where
   fromProp = TraceConfig
-    <$> "enabled" .?= enabled def
-    <*> "type"    .?= method  def
+    <$> "enabled" .?: enabled
+    <*> "type"    .?: method
 
 instance Default TraceConfig where
   def = TraceConfig True NoTracer

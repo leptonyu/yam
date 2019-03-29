@@ -1,5 +1,5 @@
 name:                yam
-version:             0.5.15
+version:             0.5.16
 synopsis:            Yam Web
 #description:
 homepage:            https://github.com/leptonyu/yam/yam#readme
@@ -73,7 +73,7 @@ tests:
       - src
     dependencies:
       - hspec == 2.*
-      - QuickCheck
+      - QuickCheck < 2.14
       - text
 
 defaults:

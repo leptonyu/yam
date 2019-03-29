@@ -45,11 +45,11 @@ instance Default LogConfig where
 
 instance FromProp LogConfig where
   fromProp = LogConfig
-    <$> "buffer-size" .?= bufferSize    def
-    <*> "file"        .?= file          def
-    <*> "max-size"    .?= maxSize       def
-    <*> "max-history" .?= rotateHistory def
-    <*> "level"       .?= level         def
+    <$> "buffer-size" .?: bufferSize
+    <*> "file"        .?: file
+    <*> "max-size"    .?: maxSize
+    <*> "max-history" .?: rotateHistory
+    <*> "level"       .?: level
 
 newLogger :: Text -> IO LogConfig -> IO (LogFunc, IO ())
 newLogger name lc = do

@@ -23,7 +23,7 @@ instance Default ClientConfig where
   def = ClientConfig True
 
 instance FromProp ClientConfig where
-  fromProp = ClientConfig <$> "enabled" .?= enabled def
+  fromProp = ClientConfig <$> "enabled" .?: enabled
 
 {-# NOINLINE managerKey #-}
 managerKey :: L.Key Manager

@@ -22,9 +22,9 @@ instance Default AppConfig where
 
 instance FromProp AppConfig where
   fromProp = AppConfig
-    <$> "name"           .?= name def
-    <*> "port"           .?= port def
-    <*> "slowloris-size" .?= slowlorisSize def
+    <$> "name"           .?: name
+    <*> "port"           .?: port
+    <*> "slowloris-size" .?: slowlorisSize
 
 data Env = Env
   { attributes    :: Vault
