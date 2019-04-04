@@ -1,5 +1,5 @@
 name:                yam-datasource
-version:             0.5.16
+version:             0.5.17
 synopsis:            Yam DataSource Middleware
 #description:
 homepage:            https://github.com/leptonyu/yam/yam-datasource#readme
@@ -12,7 +12,7 @@ extra-source-files:
 - README.md
 
 dependencies:
-  - base >= 4.9 && < 5
+  - base >= 4.10 && < 5
   - yam
   - unliftio-core
   - resourcet

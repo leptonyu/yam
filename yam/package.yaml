@@ -1,5 +1,5 @@
 name:                yam
-version:             0.5.16
+version:             0.5.17
 synopsis:            Yam Web
 #description:
 homepage:            https://github.com/leptonyu/yam/yam#readme
@@ -13,7 +13,7 @@ extra-source-files:
 - yam_test.yml
 
 dependencies:
-  - base >= 4.9 && < 5
+  - base >= 4.10 && < 5
   - salak >= 0.1.10 && < 0.3
   - menshen
   - aeson
