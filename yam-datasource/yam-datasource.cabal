@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3e663ba8b39b832f0a3834ffd81bd0cb8775bdbf059d3875ee23e236008a4f9b
+-- hash: eb80942688c41ee5e23072910d4c7e39deadfd0e994444258d6d797125755acd
 
 name:           yam-datasource
 version:        0.5.17
@@ -30,7 +30,7 @@ library
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
-      base >=4.9 && <5
+      base >=4.10 && <5
     , conduit
     , persistent
     , resource-pool

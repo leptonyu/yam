@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2ede8e19da2054515adbf05e37e10f254becdbb80ed211c91adc8d8b2ed19638
+-- hash: e6d2793743c486a7295d4d9f47fc2dbe4d4922ddda82b8aa782dd6c6ea63cff2
 
 name:           example
 version:        0.1.0.0
@@ -28,7 +28,7 @@ executable yam
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
-      base >=4.7 && <5
+      base >=4.10 && <5
     , http-types
     , lens
     , monad-logger

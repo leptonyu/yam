@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 38cafaa96eb0b7a9624be36126677987b4c12420550742640247bbfd92cf8fd6
+-- hash: 6c336ed719a1bb2631a9771dc005925835a6f87fa6743749cff258bb1f64754d
 
 name:           yam
 version:        0.5.17
@@ -46,7 +46,7 @@ library
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
-    , base >=4.9 && <5
+    , base >=4.10 && <5
     , base16-bytestring
     , binary
     , bytestring
@@ -105,7 +105,7 @@ test-suite spec
   build-depends:
       QuickCheck <2.14
     , aeson
-    , base >=4.9 && <5
+    , base >=4.10 && <5
     , base16-bytestring
     , binary
     , bytestring
