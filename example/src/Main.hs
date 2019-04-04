@@ -2,7 +2,8 @@ module Main where
 
 import           Control.Lens
 import           Data.Pool
-import           Salak       
+import           Salak
+import           Salak.Yaml
 import           Data.Swagger     hiding (version)
 import qualified Data.Text        as T
 import qualified Data.Vault.Lazy  as L
@@ -77,5 +78,9 @@ runPool a = do
   withRunInIO $ \f -> withResource p $ f . (\_ -> a)
 
 main :: IO ()
-main = do
-  start def { configName = Just "yam_test.yml" } version [poolMW, authAppMiddleware checker] (Proxy :: Proxy UserApi) service
+main = runSalakWith "yam_test" YAML $ do
+  al <- require  "yam.application"
+  sw <- require  "yam.swagger"
+  md <- require  "yam.middleware.default.enabled"
+  lc <- requireD "yam.logging"
+  exec $ \_ -> startYam al sw lc (fromMaybe True md) version [poolMW, authAppMiddleware checker] (Proxy :: Proxy UserApi) service

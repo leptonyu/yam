@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 91e56923dd614a6390cf79e2b1b3666501d06cbbb2726f1422b9df811c815d96
+-- hash: 2ede8e19da2054515adbf05e37e10f254becdbb80ed211c91adc8d8b2ed19638
 
 name:           example
 version:        0.1.0.0
@@ -34,6 +34,7 @@ executable yam
     , monad-logger
     , resource-pool
     , salak
+    , salak-yaml
     , servant-server
     , swagger2
     , text
