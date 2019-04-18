@@ -1,0 +1,30 @@
+name:                yam-redis
+version:             0.6.0
+synopsis:            Yam Redis Middleware
+#description:
+homepage:            https://github.com/leptonyu/yam/yam-redis#readme
+license:             BSD3
+author:              Daniel YU
+maintainer:          Daniel YU <leptonyu@gmail.com>
+copyright:           (c) Daniel YU
+category:            Web
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.10 && < 5
+  - yam
+  - salak
+  - data-default
+  - hedis
+  - menshen
+  - monad-logger
+  - servant-server
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - Yam.Redis
+
+defaults:
+  local: ../defaults.yaml

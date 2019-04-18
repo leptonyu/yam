@@ -2,6 +2,7 @@ resolver: nightly-2019-04-16
 packages:
 - yam
 - yam-datasource
+- yam-redis
 # - example
 
 pvp-bounds: both
