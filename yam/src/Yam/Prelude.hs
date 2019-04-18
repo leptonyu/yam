@@ -96,7 +96,7 @@ throwS e msg = do
   liftIO $ throw e { errBody = encode $ WebErrResult msg}
 
 whenException :: SomeException -> Response
-whenException e = responseServerError $ fromMaybe err400 (fromException e :: Maybe ServerError)
+whenException e = responseServerError $ fromMaybe err400 { errBody = encode $ WebErrResult $ showText e} (fromException e :: Maybe ServerError)
 
 -- | Utility
 randomCode :: V.Vector Char -> Int -> IO String
