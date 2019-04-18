@@ -4,11 +4,12 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f95a890355607962767f207824ba0eadd5d5451a457ba213ed1cd4d421b120de
+-- hash: 5bfa3058ff64ab711485d3fbcea2ee7cc32a30b6c1eaf2785facf79d5c239603
 
 name:           yam
 version:        0.6.0
-synopsis:       Yam Web
+synopsis:       A wrapper for servant.
+description:    A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
 author:         Daniel YU
@@ -24,10 +25,10 @@ extra-source-files:
 library
   exposed-modules:
       Yam
+  other-modules:
       Yam.Swagger
       Yam.Logger
       Yam.App
-  other-modules:
       Yam.Prelude
       Yam.Config
       Yam.Middleware.Trace

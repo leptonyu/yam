@@ -78,6 +78,7 @@ randomGen = unsafePerformIO createSystemRandom
 randomString :: IO ByteString
 randomString = L.toStrict . B16.encode . B.encode <$> (uniform randomGen :: IO Word64)
 
+-- | Show text.
 {-# INLINE showText #-}
 showText :: Show a => a -> Text
 showText = pack . show
@@ -89,11 +90,17 @@ data WebErrResult = WebErrResult
 instance ToJSON WebErrResult where
   toJSON WebErrResult{..} = object [ "message" .= message ]
 
-throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServerError -> Text -> m a
+-- | throw 'ServerError' with message
+throwS
+  :: (HasCallStack, MonadIO m, MonadLogger m)
+  => ServerError -- ^ Server error
+  -> Text -- ^ message
+  -> m a
 throwS e msg = do
   logErrorCS ?callStack msg
   liftIO $ throw e { errBody = encode $ WebErrResult msg}
 
+-- | Convert exception to 'Response'
 whenException :: SomeException -> Response
 whenException e = responseServerError $ fromMaybe err400 { errBody = encode $ WebErrResult $ showText e} (fromException e :: Maybe ServerError)
 
@@ -104,18 +111,18 @@ randomCode seed v = do
   vs <- replicateM v (uniformR (0, l - 1) randomGen)
   return $ (seed V.!) <$> vs
 
-
+-- | This class provide a optional supports for get entry from 'Context'.
 class TryContextEntry (cxt :: [*]) (entry :: *) where
   tryContextEntry :: Context cxt -> Maybe entry
 
-instance TryContextEntry '[] entry where
-  tryContextEntry _ = Nothing
-
-instance {-# OVERLAPPABLE #-} TryContextEntry (entry ': as) entry where
-  tryContextEntry (a :. _) = Just a
-
 instance {-# OVERLAPPABLE #-} TryContextEntry as entry => TryContextEntry (a ': as) entry where
   tryContextEntry (_ :. as) = tryContextEntry as
+
+instance {-# OVERLAPPABLE #-} TryContextEntry a entry where
+  tryContextEntry _ = Nothing
+
+instance TryContextEntry (entry ': as) entry where
+  tryContextEntry (a :. _) = Just a
 
 
 

@@ -10,11 +10,13 @@ import           Servant
 import           Yam.Logger
 import           Yam.Prelude
 
--- | Yam main MonadTrans instance AppT
+-- | Application Context Monad.
 newtype AppT cxt m a = AppT { runAppT' :: ReaderT (Context cxt) m a } deriving (Functor, Applicative, Monad)
 
+-- | Application on IO.
 type AppIO cxt = AppT cxt IO
 
+-- | Application with 'Vault'
 type AppV cxt = AppT (VaultHolder : cxt)
 
 instance MonadTrans (AppT cxt) where
@@ -48,20 +50,24 @@ instance (HasLogger cxt, MonadIO m) => MonadLoggerIO (AppT cxt m) where
     v <- tryEntry
     return (getLogger v f)
 
+-- | Get entry from 'AppT'
 getEntry :: (HasContextEntry cxt entry, Monad m) => AppT cxt m entry
 getEntry = asks getContextEntry
 
+-- | Try get entry from 'AppT'
 tryEntry :: (TryContextEntry cxt entry, Monad m) => AppT cxt m (Maybe entry)
 tryEntry = asks tryContextEntry
 
+-- | Run Application with context.
 runAppT :: Context cxt -> AppT cxt m a -> m a
 runAppT c a = runReaderT (runAppT' a) c
 
 instance (HasContextEntry cxt SourcePack, Monad m) => HasSourcePack (AppT cxt m) where
   askSourcePack = getEntry
 
-runVault :: (cxt' ~ (VaultHolder ': cxt), MonadIO m) => Context cxt -> Vault -> AppIO cxt' a -> m a
+-- | Run Application with 'Vault'.
+runVault :: MonadIO m => Context cxt -> Vault -> AppV cxt IO a -> m a
 runVault c v a = liftIO $ runAppT (VH v :. c) a
 
-nt :: cxt' ~ (VaultHolder ': cxt) => Context cxt -> Vault -> AppIO cxt' a -> Handler a
+nt :: Context cxt -> Vault -> AppV cxt IO a -> Handler a
 nt = runVault

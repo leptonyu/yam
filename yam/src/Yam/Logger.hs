@@ -33,12 +33,13 @@ toStr LevelWarn      = " WARN"
 toStr LevelError     = "ERROR"
 toStr (LevelOther l) = toLogStr l
 
+-- | Logger config
 data LogConfig = LogConfig
-  { bufferSize    :: Word16
-  , file          :: FilePath
-  , maxSize       :: Word32
-  , rotateHistory :: Word16
-  , level         :: LogLevel
+  { bufferSize    :: Word16   -- ^ Logger buffer size.
+  , file          :: FilePath -- ^ Logger file path.
+  , maxSize       :: Word32   -- ^ Max logger file size.
+  , rotateHistory :: Word16   -- ^ Max number of logger files should be reserved.
+  , level         :: LogLevel -- ^ Log level to show.
   } deriving (Eq, Show)
 
 instance Default LogConfig where
@@ -87,8 +88,11 @@ getLogger (Just (VH vault)) (LF logger) =
   in nlf logger $ L.lookup extensionLogKey vault
 getLogger _ (LF logger) = logger
 
+-- | Holder for 'LogFunc'
 newtype LogFuncHolder = LF LogFunc
+-- | Holder for 'Vault'
 newtype VaultHolder   = VH L.Vault
 
+-- | Context with logger.
 type HasLogger cxt = (HasContextEntry cxt LogFuncHolder, TryContextEntry cxt VaultHolder)
 

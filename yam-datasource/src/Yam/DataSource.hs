@@ -1,3 +1,13 @@
+-- |
+-- Module:      Yam.DataSource
+-- Copyright:   (c) 2019 Daniel YU
+-- License:     BSD3
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
+-- Datasource supports for [yam](https://hackage.haskell.org/package/yam).
+-- 
 module Yam.DataSource(
   -- * DataSource Types
     DataSourceProvider(..)

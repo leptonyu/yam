@@ -1,4 +1,14 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+-- |
+-- Module:      Yam.Redis
+-- Copyright:   (c) 2019 Daniel YU
+-- License:     BSD3
+-- Maintainer:  leptonyu@gmail.com
+-- Stability:   experimental
+-- Portability: portable
+--
+-- Redis supports for [yam](https://hackage.haskell.org/package/yam).
+-- 
 module Yam.Redis(
     RedisConfig(..)
   , HasRedis

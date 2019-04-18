@@ -1,7 +1,7 @@
 name:                yam
 version:             0.6.0
-synopsis:            Yam Web
-#description:
+synopsis:            A wrapper of servant
+description:         A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 homepage:            https://github.com/leptonyu/yam/yam#readme
 license:             BSD3
 author:              Daniel YU
@@ -45,10 +45,11 @@ library:
   source-dirs: src
   exposed-modules:
     - Yam
+  other-modules:
     - Yam.Swagger
     - Yam.Logger
     - Yam.App
-  other-modules:
+    
     - Yam.Prelude
     - Yam.Config
     - Yam.Middleware.Trace
