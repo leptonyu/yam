@@ -26,3 +26,18 @@ servantService = throwS err401 "Servant"
 
 main :: IO ()
 main = startSimple YAML version (Proxy :: Proxy UserApi) service
+
+type Simple = '[ LogFunc ]
+
+startSimple
+  :: forall file api. (HasLoad file, HasSwagger api , HasServer api Simple)
+  => file
+  -> Version
+  -> Proxy api
+  -> ServerT api (App (Vault ': Simple))
+  -> IO ()
+startSimple f v p a = runSalakWith "yam_test" f $ do
+  al <- require  "yam.application"
+  sw <- require  "yam.swagger"
+  lc <- requireD "yam.logging"
+  liftIO $ start al sw v lc (\_ -> return ()) C.id p a

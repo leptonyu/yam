@@ -1,8 +1,6 @@
 {-# LANGUAGE NoPolyKinds #-}
 module Yam(
     start
-  , startSimple
-  , Simple
   , AppConfig(..)
   , AppT
   , App
@@ -40,7 +38,6 @@ import qualified Control.Category               as C
 import           Control.Monad.Logger.CallStack
 import           Network.Wai
 import           Network.Wai.Handler.Warp
-import           Salak
 import           Servant
 import           Servant.Swagger
 import           Yam.App
@@ -94,21 +91,5 @@ start AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am p api =
       $ errorMiddleware (logger :. EmptyContext)
       $ serveWithContextAndSwagger sw (baseInfo name vs port) (Proxy @(Vault :> api)) cxt
       $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
-
-
-type Simple = '[ LogFunc ]
-
-startSimple
-  :: forall file api. (HasLoad file, HasSwagger api , HasServer api Simple)
-  => file
-  -> Version
-  -> Proxy api
-  -> ServerT api (App (Vault ': Simple))
-  -> IO ()
-startSimple f v p a = runSalakWith "yam_test" f $ do
-  al <- require  "yam.application"
-  sw <- require  "yam.swagger"
-  lc <- requireD "yam.logging"
-  liftIO $ start al sw v lc (\_ -> return ()) C.id p a
 
 
