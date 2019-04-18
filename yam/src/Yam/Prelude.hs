@@ -2,7 +2,7 @@
 {-# LANGUAGE ImplicitParams       #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Yam.Types.Prelude(
+module Yam.Prelude(
   -- * Utilities
     randomString
   , showText
@@ -23,58 +23,51 @@ module Yam.Types.Prelude(
   , throw
   , try
   , catch
+  , when
   , (<>)
-  , module Data.Proxy
-  , module Data.Vault.Lazy
-  , module Data.Maybe
-  , module Data.Word
-  , module Data.Text.Encoding
-  , module Data.Function
-  , module Data.Version
-  , module Control.Applicative
-  , module Control.Monad
-  , module Control.Monad.Reader
-  , module Control.Monad.Logger.CallStack
-  , module Network.Wai
-  , module Network.HTTP.Types
+  , LogLevel(..)
+  , logInfo
+  , logError
+  , logWarn
+  , logDebug
+  , Loc(..)
+  , MonadIO(..)
+  , HasContextEntry(..)
+  , TryContextEntry(..)
+  , fromMaybe
+  , (&)
+  , decodeUtf8
+  , encodeUtf8
+  , fromJust
+  , Version
+  , Middleware
   ) where
 
-import           Control.Applicative
-import           Control.Exception              hiding (Handler)
+import           Control.Exception                   hiding (Handler)
 import           Control.Monad
 import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
-import           Control.Monad.Reader
 import           Data.Aeson
-import qualified Data.Binary                    as B
-import           Data.ByteString                (ByteString)
-import qualified Data.ByteString.Base16.Lazy    as B16
-import qualified Data.ByteString.Lazy           as L
+import qualified Data.Binary                         as B
+import           Data.ByteString                     (ByteString)
+import qualified Data.ByteString.Base16.Lazy         as B16
+import qualified Data.ByteString.Lazy                as L
 import           Data.Default
 import           Data.Function
 import           Data.Maybe
-import           Data.Monoid                    ((<>))
-import           Data.Proxy
-import           Data.Text                      (Text, pack)
-import           Data.Text.Encoding             (decodeUtf8, encodeUtf8)
-import           Data.Vault.Lazy                (Key, Vault, newKey)
-import qualified Data.Vector                    as V
+import           Data.Monoid                         ((<>))
+import           Data.Text                           (Text, pack)
+import           Data.Text.Encoding                  (decodeUtf8, encodeUtf8)
+import qualified Data.Vector                         as V
 import           Data.Version
 import           Data.Word
 import           GHC.Stack
-import           Network.HTTP.Types
 import           Network.Wai
 import           Servant
-import           System.IO.Unsafe               (unsafePerformIO)
-import           System.Random.MWC
-#if MIN_VERSION_servant_server(0,16,0)
 import           Servant.Server.Internal.ServerError
-type ServantErr = ServerError
-responseServantErr = responseServerError
-#else
-import           Servant.Server.Internal.ServantErr
-#endif
+import           System.IO.Unsafe                    (unsafePerformIO)
+import           System.Random.MWC
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
@@ -97,17 +90,34 @@ data WebErrResult = WebErrResult
 instance ToJSON WebErrResult where
   toJSON WebErrResult{..} = object [ "message" .= message ]
 
-throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServantErr -> Text -> m a
+throwS :: (HasCallStack, MonadIO m, MonadLogger m) => ServerError -> Text -> m a
 throwS e msg = do
   logErrorCS ?callStack msg
   liftIO $ throw e { errBody = encode $ WebErrResult msg}
 
 whenException :: SomeException -> Response
-whenException e = responseServantErr $ fromMaybe err400 (fromException e :: Maybe ServantErr)
+whenException e = responseServerError $ fromMaybe err400 (fromException e :: Maybe ServerError)
 
 -- | Utility
 randomCode :: V.Vector Char -> Int -> IO String
 randomCode seed v = do
   let l = V.length seed
-  vs <- sequence $  replicate v $ uniformR (0,l-1) randomGen
+  vs <- replicateM v (uniformR (0, l - 1) randomGen)
   return $ (seed V.!) <$> vs
+
+
+class TryContextEntry (cxt :: [*]) (entry :: *) where
+  tryContextEntry :: Context cxt -> Maybe entry
+
+instance TryContextEntry '[] entry where
+  tryContextEntry _ = Nothing
+
+instance {-# OVERLAPPABLE #-} TryContextEntry (entry ': as) entry where
+  tryContextEntry (a :. _) = Just a
+
+instance {-# OVERLAPPABLE #-} TryContextEntry as entry => TryContextEntry (a ': as) entry where
+  tryContextEntry (_ :. as) = tryContextEntry as
+
+
+
+

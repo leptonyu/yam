@@ -27,11 +27,7 @@ executables:
       - monad-logger
       - salak
       - salak-yaml
-      - http-types
       - text
-      - swagger2
-      - lens
-      - resource-pool
       - vault
 
 defaults:

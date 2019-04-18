@@ -1,21 +1,20 @@
-{-# LANGUAGE ImplicitParams #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Yam.Logger(
   -- * Logger Function
     withLogger
-  , putLogger
-  , setExtendLog
   , getLogger
   , extensionLogKey
-  , throwS
   , LogConfig(..)
+  , HasLogger
   ) where
 
+import           Control.Monad.Logger.CallStack
+import qualified Data.Vault.Lazy                as L
+import           Data.Word
 import           Salak
-import qualified Data.Vault.Lazy       as L
-import           System.IO.Unsafe      (unsafePerformIO)
+import           System.IO.Unsafe               (unsafePerformIO)
 import           System.Log.FastLogger
-import           Yam.Types.Env
-import           Yam.Types.Prelude
+import           Yam.Prelude
 
 instance FromEnumProp LogLevel where
   fromEnumProp "debug" = Right   LevelDebug
@@ -68,31 +67,23 @@ newLogger name lc = do
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
-withLogger :: Text -> IO LogConfig -> LoggingT IO a -> IO a
-withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT action f
+withLogger :: Text -> IO LogConfig -> (LogFunc -> LoggingT IO a) -> IO a
+withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT (askLoggerIO >>= action) f
 
 addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)
 
-{-# NOINLINE loggerKey #-}
-loggerKey :: L.Key LogFunc
-loggerKey = unsafePerformIO newKey
-
 {-# NOINLINE extensionLogKey #-}
 extensionLogKey :: L.Key Text
-extensionLogKey = unsafePerformIO newKey
+extensionLogKey = unsafePerformIO L.newKey
 
-setExtendLog :: (Text -> Text) -> Env -> Env
-setExtendLog f env = let mt = fromMaybe "" $ getAttr extensionLogKey env in setAttr extensionLogKey (f mt) env
-
-putLogger :: LogFunc -> Env -> Env
-putLogger = setAttr loggerKey
-
-getLogger :: Env -> LogFunc
-getLogger env =
-  let trace  :: Maybe Text    = getAttr extensionLogKey  env
-      logger :: Maybe LogFunc = getAttr loggerKey env
-      {-# INLINE nlf #-}
+getLogger :: Maybe L.Vault -> LogFunc -> LogFunc
+getLogger (Just vault) logger =
+  let {-# INLINE nlf #-}
       nlf x (Just t) = addTrace x t
       nlf x _        = x
-  in maybe (\_ _ _ _ -> return ()) (`nlf` trace) logger
+  in nlf logger $ L.lookup extensionLogKey vault
+getLogger _ logger = logger
+
+type HasLogger cxt = (HasContextEntry cxt LogFunc, TryContextEntry cxt L.Vault)
+

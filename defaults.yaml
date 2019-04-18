@@ -1,4 +1,4 @@
-ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
+ghc-options: -Wall
 
 default-extensions:
   - AutoDeriveTypeable

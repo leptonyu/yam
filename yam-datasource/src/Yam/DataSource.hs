@@ -3,77 +3,88 @@ module Yam.DataSource(
     DataSourceProvider(..)
   , DataSource
   , DB
-  -- * Primary DataSource Functions
+  , HasDataSource
+  , DataSourceConfig(..)
   , runTrans
-  , primaryDatasourceMiddleware
-  -- * Secondary DataSource Functions
-  , runTransWith
   , datasourceMiddleware
   -- * Sql Functions
   , query
   , selectValue
   ) where
 
+import           Control.Exception              (bracket)
 import           Control.Monad.IO.Unlift
-import           Data.Acquire            (withAcquire)
+import           Control.Monad.Logger.CallStack
+import           Data.Acquire                   (withAcquire)
 import           Data.Conduit
-import qualified Data.Conduit.List       as CL
+import qualified Data.Conduit.List              as CL
+import           Data.Default
 import           Data.Pool
-import           Database.Persist.Sql    hiding (Key)
-import           System.IO.Unsafe        (unsafePerformIO)
-import           Yam                     hiding (LogFunc)
+import qualified Data.Text                      as T
+import           Database.Persist.Sql           hiding (Key)
+import           Salak
+import           Servant
+import           Yam
+
+
+data DataSourceConfig = DataSourceConfig
+  { dsType  :: T.Text
+  , dsUrl   :: T.Text
+  , maxConn :: Int
+  } deriving Show
+
+
+instance Default DataSourceConfig where
+  def = DataSourceConfig "sqlite" ":memory:" 10
+
+instance FromProp DataSourceConfig where
+  fromProp = DataSourceConfig
+    <$> "type"            .?: dsType
+    <*> "url"             .?: dsUrl
+    <*> "max-connections" .?: maxConn
 
 type DataSource = Pool SqlBackend
-
-{-# NOINLINE dataSourceKey #-}
-dataSourceKey :: Key DataSource
-dataSourceKey = unsafePerformIO newKey
 
 data DataSourceProvider = DataSourceProvider
   { datasource :: LoggingT IO DataSource
   , migration  :: DB (LoggingT IO) ()
-  , dbtype     :: Text
+  , dbtype     :: T.Text
   }
 -- SqlPersistT ~ ReaderT SqlBackend
 type DB = SqlPersistT
 
 query
   :: (MonadUnliftIO m)
-  => Text
+  => T.Text
   -> [PersistValue]
   -> DB m [[PersistValue]]
 query sql params = do
   res <- rawQueryRes sql params
   withAcquire res (\a -> runConduit $ a .| CL.fold (flip (:)) [])
 
-selectValue :: (PersistField a, MonadUnliftIO m) => Text -> DB m [a]
+selectValue :: (PersistField a, MonadUnliftIO m) => T.Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
-runTransWith :: Key DataSource -> DB App a -> App a
-runTransWith k a = requireAttr k >>= (`runDB` a)
+type HasDataSource cxt = HasContextEntry cxt DataSource
 
-runTrans :: DB App a -> App a
-runTrans = runTransWith dataSourceKey
-
-{-# INLINE runDB #-}
-runDB :: (MonadLoggerIO m, MonadUnliftIO m) => DataSource -> DB m a -> m a
-runDB pool db = do
+runTrans
+  :: ( HasDataSource cxt
+     , HasLogger cxt
+     , MonadIO m
+     , MonadUnliftIO m)
+  => DB (AppT cxt m) a
+  -> AppT cxt m a
+runTrans a = do
+  pool   <- getEntry
   logger <- askLoggerIO
-  withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn db c { connLogFunc = logger }
+  withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn a c { connLogFunc = logger }
 
-datasourceMiddleware :: Key DataSource -> DataSourceProvider -> AppMiddleware
-datasourceMiddleware k DataSourceProvider{..} = simplePoolMiddleware (True, "database " <> dbtype) k open (liftIO . destroyAllResources)
-  where
-    {-# INLINE trans #-}
-    trans :: LoggingT IO a -> App a
-    trans a = askLoggerIO >>= liftIO . runLoggingT a
-    {-# INLINE open #-}
-    open = do
-      a <- trans datasource
-      trans $ runDB a migration
-      return a
-
-primaryDatasourceMiddleware = datasourceMiddleware dataSourceKey
+datasourceMiddleware :: DataSourceProvider -> AppMiddleware a (DataSource ': a)
+datasourceMiddleware DataSourceProvider{..} = AppMiddleware $ \c m f -> askLoggerIO >>= \lc ->
+  liftIO $ bracket
+    (runLoggingT datasource lc)
+    destroyAllResources
+    (\ds -> runLoggingT (f (ds :. c) m) lc)
 
 
 

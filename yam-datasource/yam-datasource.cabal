@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: eb80942688c41ee5e23072910d4c7e39deadfd0e994444258d6d797125755acd
+-- hash: c94b2779a636fd95ba745d294ff472511e8b0d54e3e3d306be548bccaf493661
 
 name:           yam-datasource
-version:        0.5.17
+version:        0.6.0
 synopsis:       Yam DataSource Middleware
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam-datasource#readme
@@ -28,13 +28,19 @@ library
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall
   build-depends:
       base >=4.10 && <5
     , conduit
+    , data-default
+    , monad-logger
     , persistent
     , resource-pool
     , resourcet
+    , salak
+    , servant-server
+    , text
     , unliftio-core
+    , vault
     , yam
   default-language: Haskell2010

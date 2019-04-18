@@ -1,5 +1,5 @@
 name:                yam-datasource
-version:             0.5.17
+version:             0.6.0
 synopsis:            Yam DataSource Middleware
 #description:
 homepage:            https://github.com/leptonyu/yam/yam-datasource#readme
@@ -19,6 +19,12 @@ dependencies:
   - conduit
   - persistent
   - resource-pool
+  - monad-logger
+  - text
+  - vault
+  - servant-server
+  - salak
+  - data-default
 
 library:
   source-dirs: src

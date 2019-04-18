@@ -1,8 +1,8 @@
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Yam.Middleware.Trace(
   -- * Trace Middleware
-    MonadTracer(..)
-  , MonadTracing(..)
-  , TraceConfig(..)
+    TraceConfig(..)
+  , Span(..)
   , hTraceId
   , hParentTraceId
   , hSpanId
@@ -10,15 +10,19 @@ module Yam.Middleware.Trace(
   , traceMiddleware
   ) where
 
-import qualified Data.HashMap.Lazy as HM
+import           Control.Monad.State
+import           Data.Default
+import qualified Data.HashMap.Lazy   as HM
 import           Data.Opentracing
-import qualified Data.Text         as T
-import qualified Data.Vault.Lazy   as L
+import qualified Data.Text           as T
+import qualified Data.Vault.Lazy     as L
+import           Network.HTTP.Types
+import           Network.Wai
 import           Salak
-import           System.IO.Unsafe  (unsafePerformIO)
+import           Servant
+import           System.IO.Unsafe    (unsafePerformIO)
 import           Yam.Logger
-import           Yam.Middleware
-import           Yam.Types
+import           Yam.Prelude
 
 data TraceConfig = TraceConfig
   { enabled :: Bool
@@ -40,30 +44,13 @@ instance FromProp TraceConfig where
 instance Default TraceConfig where
   def = TraceConfig True NoTracer
 
-notifier :: TraceNotifyType -> Span -> App ()
-notifier _ _ = return ()
-
 {-# NOINLINE spanContextKey #-}
 spanContextKey :: L.Key SpanContext
-spanContextKey = unsafePerformIO newKey
+spanContextKey = unsafePerformIO L.newKey
 
 {-# NOINLINE spanKey #-}
 spanKey :: L.Key Span
-spanKey = unsafePerformIO newKey
-
-instance MonadTracer App where
-  askSpanContext = requireAttr spanContextKey
-
-instance MonadTracing App where
-  runInSpan name notify action = do
-    s <- askAttr spanKey
-    n <- case s of
-      Just sp -> newChildSpan name sp
-      _       -> newSpan name
-    notify n
-    a <- withAttr spanKey n $ action n
-    finishSpan n >>= notify
-    return a
+spanKey = unsafePerformIO L.newKey
 
 hTraceId :: HeaderName
 hTraceId = "X-B3-TraceId"
@@ -77,45 +64,53 @@ hSpanId = "X-B3-SpanId"
 hSampled :: HeaderName
 hSampled = "X-B3-Sampled"
 
-parseSpan :: RequestHeaders -> Env -> IO Env
-parseSpan headers env =
-  let sc = fromMaybe (SpanContext "" HM.empty) $ getAttr spanContextKey env
+parseSpan :: RequestHeaders -> Vault -> IO Vault
+parseSpan headers vault =
+  let sc = fromMaybe (SpanContext "" HM.empty) $ L.lookup spanContextKey vault
   in case Prelude.lookup hTraceId headers of
       Just tid -> let sc' = sc { traceId = tid }
-                  in return $ env
-                      & setAttr spanContextKey      sc'
-                      & go (fromMaybe (traceId sc') $ Prelude.lookup hSpanId headers) sc'
+                  in return $ vault
+                      & L.insert spanContextKey sc'
+                      & go (fromMaybe tid $ Prelude.lookup hSpanId headers) sc'
       _        -> do
         c <- newContext
-        return $ setAttr spanContextKey c env
+        return $ L.insert spanContextKey c vault
   where
-    go spanId context env' =
+    go spanId context vault' =
       let name = "-"
           startTime  = undefined
           finishTime = Nothing
           tags       = HM.empty
           logs       = HM.empty
           references = []
-      in setAttr spanKey Span{..} env'
+      in L.insert spanKey Span{..} vault'
 
-traceMw :: Env -> (Span -> App ()) -> Middleware
-traceMw env' notify app req resH = do
-  env <- parseSpan (requestHeaders req) env'
-  runApp env $
-    runInSpan (decodeUtf8 (requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) notify $ \s@Span{..} -> do
-      let SpanContext{..} = context
-          tid = decodeUtf8 $ traceId <> "," <> spanId
-          v   = L.insert extensionLogKey tid (vault req)
-          v'  = L.insert spanKey s v
-          rh' = resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
-          c e = do
-            runApp env { reqAttributes = Just v} (logError $ showText e)
-            rh' $ whenException e
-      liftIO (app req {vault = v'} rh' `catch` c)
+instance MonadIO m => MonadTracer (StateT Request m) where
+  askSpanContext = do
+    req <- get
+    v   <- liftIO $ parseSpan (requestHeaders req) (vault req)
+    put req { vault = v}
+    return $ fromJust $ L.lookup spanContextKey v
 
-traceMiddleware :: TraceConfig -> AppMiddleware
-traceMiddleware TraceConfig{..}
-  = AppMiddleware $ \env f -> if enabled
-    then f (env, traceMw env $ notifier method)
-    else f (env, id)
+instance MonadIO m => MonadTracing (StateT Request m) where
+  runInSpan name nt a = do
+    req <- get
+    n   <- case L.lookup spanKey $ vault req of
+        Just sp -> newChildSpan name sp
+        _       -> newSpan name
+    nt n
+    a' <- a n
+    finishSpan n >>= nt
+    return a'
+
+traceMiddleware :: (Span -> IO ()) -> Middleware
+traceMiddleware notify app req resH = (`evalStateT` req)
+  $ runInSpan (decodeUtf8 (requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) (liftIO . notify)
+  $ \s@Span{..} -> do
+    let SpanContext{..} = context
+        tid = decodeUtf8 $ traceId <> "," <> spanId
+        v   = L.insert extensionLogKey tid (vault req)
+        v'  = L.insert spanKey s v
+        rh' = resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
+    liftIO (app req {vault = v'} rh')
 

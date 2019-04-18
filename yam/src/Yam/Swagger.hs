@@ -7,12 +7,12 @@ module Yam.Swagger(
 
 import           Control.Lens       hiding (Context)
 import           Data.Reflection
-import           Salak
 import           Data.Swagger
+import           Salak
 import           Servant
 import           Servant.Swagger
 import           Servant.Swagger.UI
-import           Yam.Types.Prelude
+import           Yam.Prelude
 
 data SwaggerConfig = SwaggerConfig
   { urlDir    :: String
@@ -22,7 +22,7 @@ data SwaggerConfig = SwaggerConfig
 
 instance FromProp SwaggerConfig where
   fromProp = SwaggerConfig
-    <$> "dir"     .?= "swagger-ui" 
+    <$> "dir"     .?= "swagger-ui"
     <*> "schema"  .?= "swagger-ui.json"
     <*> "enabled" .?= True
 

@@ -1,22 +1,114 @@
+{-# LANGUAGE NoPolyKinds #-}
 module Yam(
-  -- * Application
-    module Yam.Internal
-  , module Yam.Types
+    start
+  , startSimple
+  , Simple
+  , AppConfig(..)
+  , AppT
+  , App
+  , getEntry
+  , runAppT
+  , runVault
+  , throwS
+  , throw
+  -- * Logger
+  , LogConfig(..)
+  , AppMiddleware(..)
+  , simpleAppMiddleware
+  , HasContextEntry(..)
+  , TryContextEntry(..)
+  , HasLogger
+  , LogFunc
   -- * Modules
-  , module Yam.Logger
+  -- ** Swagger
   , module Yam.Swagger
-  -- * Middlewares
-  , module Yam.Middleware
-  , module Yam.Middleware.Auth
-  , module Yam.Middleware.Client
+  -- ** Trace
   , module Yam.Middleware.Trace
+  -- * Reexport
+  , Span(..)
+  , showText
+  , randomString
+  , randomCode
+  , decodeUtf8
+  , encodeUtf8
+  , pack
+  , liftIO
+  , fromMaybe
   ) where
 
-import           Yam.Internal
+import qualified Control.Category               as C
+import           Control.Monad.Logger.CallStack
+import           Network.Wai
+import           Network.Wai.Handler.Warp
+import           Salak
+import           Servant
+import           Servant.Swagger
+import           Yam.App
+import           Yam.Config
 import           Yam.Logger
-import           Yam.Middleware
-import           Yam.Middleware.Auth
-import           Yam.Middleware.Client
+import           Yam.Middleware.Error
 import           Yam.Middleware.Trace
+import           Yam.Prelude
 import           Yam.Swagger
-import           Yam.Types
+
+
+newtype AppMiddleware a b = AppMiddleware
+  { runAM :: Context a -> Middleware -> (Context b -> Middleware -> LoggingT IO ()) -> LoggingT IO () }
+
+instance C.Category AppMiddleware where
+  id = AppMiddleware $ \a m f -> f a m
+  (AppMiddleware fbc) . (AppMiddleware fab) = AppMiddleware $ \a m f -> fab a m $ \b m1 -> fbc b m1 f
+
+simpleAppMiddleware :: a -> AppMiddleware cxt (a ': cxt)
+simpleAppMiddleware a = AppMiddleware $ \ c m f -> f (a :. c) m
+
+start
+  :: forall api cxt
+  . ( HasServer api cxt
+    , HasSwagger api)
+  => AppConfig
+  -> SwaggerConfig
+  -> Version
+  -> IO LogConfig
+  -> (Span -> App cxt ())
+  -> AppMiddleware '[LogFunc] cxt
+  -> Proxy api
+  -> ServerT api (App (Vault ': cxt))
+  -> IO ()
+start AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am p api =
+  withLogger name logConfig $ \logger -> runAM am (logger :. EmptyContext) id $ \cxt middleware -> do
+    logInfo $ "Start Service [" <> name <> "] ..."
+    let portText = showText port
+        settings = defaultSettings
+                 & setPort port
+                 & setOnException (\_ _ -> return ())
+                 & setOnExceptionResponse whenException
+                 & setSlowlorisSize slowlorisSize
+    when enabled $
+      logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
+    logInfo      $ "Servant started on port(s): "       <> portText
+    liftIO
+      $ runSettings settings
+      $ traceMiddleware (runAppT cxt . f)
+      $ middleware
+      $ errorMiddleware (logger :. EmptyContext)
+      $ serveWithContextAndSwagger sw (baseInfo name vs port) (Proxy @(Vault :> api)) cxt
+      $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
+
+
+type Simple = '[ LogFunc ]
+
+startSimple
+  :: forall file api. (HasLoad file, HasSwagger api , HasServer api Simple)
+  => file
+  -> Version
+  -> Proxy api
+  -> ServerT api (App (Vault ': Simple))
+  -> IO ()
+startSimple f v p a = runSalakWith "yam_test" f $ do
+  al <- require  "yam.application"
+  sw <- require  "yam.swagger"
+  lc <- requireD "yam.logging"
+  liftIO $ start al sw v lc (\_ -> return ()) C.id p a
+
+

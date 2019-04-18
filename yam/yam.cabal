@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 6c336ed719a1bb2631a9771dc005925835a6f87fa6743749cff258bb1f64754d
+-- hash: 6f5971aec2e4e2602b698da059ba393ec8cc43307225994eec5e0cba372605e7
 
 name:           yam
-version:        0.5.17
+version:        0.6.0
 synopsis:       Yam Web
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
@@ -24,18 +24,14 @@ extra-source-files:
 library
   exposed-modules:
       Yam
-      Yam.Internal
-      Yam.Middleware
-      Yam.Middleware.Default
-      Yam.Middleware.Auth
-      Yam.Middleware.Trace
-      Yam.Middleware.Client
       Yam.Swagger
-      Yam.Types
       Yam.Logger
+      Yam.App
   other-modules:
-      Yam.Types.Prelude
-      Yam.Types.Env
+      Yam.Prelude
+      Yam.Config
+      Yam.Middleware.Trace
+      Yam.Middleware.Error
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer
@@ -43,7 +39,7 @@ library
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall
   build-depends:
       aeson
     , base >=4.10 && <5
@@ -52,7 +48,6 @@ library
     , bytestring
     , data-default
     , fast-logger
-    , http-client >=0.5.14 && <0.7
     , http-types
     , lens
     , menshen
@@ -60,10 +55,9 @@ library
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.1.10 && <0.3
+    , salak >=0.2 && <0.3
     , scientific
-    , servant-client >=0.15 && <0.17
-    , servant-server >=0.15 && <0.17
+    , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui
     , swagger2
@@ -85,23 +79,19 @@ test-suite spec
       Data.Opentracing.Tracer
       Data.Opentracing.Types
       Yam
-      Yam.Internal
+      Yam.App
+      Yam.Config
       Yam.Logger
-      Yam.Middleware
-      Yam.Middleware.Auth
-      Yam.Middleware.Client
-      Yam.Middleware.Default
+      Yam.Middleware.Error
       Yam.Middleware.Trace
+      Yam.Prelude
       Yam.Swagger
-      Yam.Types
-      Yam.Types.Env
-      Yam.Types.Prelude
       Paths_yam
   hs-source-dirs:
       test
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
+  ghc-options: -Wall
   build-depends:
       QuickCheck <2.14
     , aeson
@@ -112,7 +102,6 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
-    , http-client >=0.5.14 && <0.7
     , http-types
     , lens
     , menshen
@@ -120,10 +109,9 @@ test-suite spec
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.1.10 && <0.3
+    , salak >=0.2 && <0.3
     , scientific
-    , servant-client >=0.15 && <0.17
-    , servant-server >=0.15 && <0.17
+    , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui
     , swagger2
