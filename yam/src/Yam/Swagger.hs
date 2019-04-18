@@ -8,6 +8,7 @@ module Yam.Swagger(
 import           Control.Lens       hiding (Context)
 import           Data.Reflection
 import           Data.Swagger
+import           Data.Version       (showVersion)
 import           Salak
 import           Servant
 import           Servant.Swagger
@@ -46,7 +47,7 @@ serveWithContextAndSwagger SwaggerConfig{..} g5 proxy cxt api =
 baseInfo :: Text -> Version -> Int -> Swagger -> Swagger
 baseInfo n v p s = s
   & info . title   .~ n
-  & info . version .~ showText v
+  & info . version .~ pack (showVersion v)
   & host ?~ Host "localhost" (Just $ fromIntegral p)
 
 

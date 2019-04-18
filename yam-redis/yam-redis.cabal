@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bad3b7f056a38dc2cd51549f121b9725137b09abb91bc4a1ca9e5b68ba165d53
+-- hash: 7bd8805e78b8d4b2f860d83d73bc8c5e0e1fd02e4f9eb1952185cba23ebd5ade
 
 name:           yam-redis
 version:        0.6.0
@@ -35,6 +35,7 @@ library
     , hedis
     , menshen
     , monad-logger
+    , mtl
     , salak
     , servant-server
     , yam

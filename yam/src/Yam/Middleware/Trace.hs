@@ -103,9 +103,9 @@ instance MonadIO m => MonadTracing (StateT Request m) where
     finishSpan n >>= nt
     return a'
 
-traceMiddleware :: (Span -> IO ()) -> Middleware
+traceMiddleware :: (Vault -> Span -> IO ()) -> Middleware
 traceMiddleware notify app req resH = (`evalStateT` req)
-  $ runInSpan (decodeUtf8 (requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) (liftIO . notify)
+  $ runInSpan (decodeUtf8 (requestMethod req) <> " /" <> T.intercalate "/" (pathInfo req)) go
   $ \s@Span{..} -> do
     let SpanContext{..} = context
         tid = decodeUtf8 $ traceId <> "," <> spanId
@@ -113,4 +113,8 @@ traceMiddleware notify app req resH = (`evalStateT` req)
         v'  = L.insert spanKey s v
         rh' = resH . mapResponseHeaders (\hs -> (hTraceId, traceId):(hSpanId, spanId):hs)
     liftIO (app req {vault = v'} rh')
+  where
+    go s = do
+      req' <- get
+      liftIO (notify (vault req') s)
 

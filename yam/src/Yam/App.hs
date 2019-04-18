@@ -1,5 +1,4 @@
-{-# LANGUAGE AllowAmbiguousTypes  #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 module Yam.App where
 
 import           Control.Monad.IO.Unlift
@@ -11,9 +10,12 @@ import           Servant
 import           Yam.Logger
 import           Yam.Prelude
 
+-- | Yam main MonadTrans instance AppT
 newtype AppT cxt m a = AppT { runAppT' :: ReaderT (Context cxt) m a } deriving (Functor, Applicative, Monad)
 
-type App cxt = AppT cxt IO
+type AppIO cxt = AppT cxt IO
+
+type AppV cxt = AppT (VaultHolder : cxt)
 
 instance MonadTrans (AppT cxt) where
   lift = AppT . lift
@@ -58,8 +60,8 @@ runAppT c a = runReaderT (runAppT' a) c
 instance (HasContextEntry cxt SourcePack, Monad m) => HasSourcePack (AppT cxt m) where
   askSourcePack = getEntry
 
-runVault :: (cxt' ~ (Vault ': cxt), MonadIO m) => Context cxt -> Vault -> App cxt' a -> m a
-runVault c v a = liftIO $ runAppT (v :. c) a
+runVault :: (cxt' ~ (VaultHolder ': cxt), MonadIO m) => Context cxt -> Vault -> AppIO cxt' a -> m a
+runVault c v a = liftIO $ runAppT (VH v :. c) a
 
-nt :: cxt' ~ (Vault ': cxt) => Context cxt -> Vault -> App cxt' a -> Handler a
+nt :: cxt' ~ (VaultHolder ': cxt) => Context cxt -> Vault -> AppIO cxt' a -> Handler a
 nt = runVault

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: aeda5b6a2a82bad86c1238bc41a413bc9fee769740d1657959c9e3a6677aa246
+-- hash: 54744fbdbc5e7917c3511762dac56484d92fa71b87b87dbecae7a4a3e864d372
 
 name:           example
 version:        0.1.0.0
@@ -33,6 +33,7 @@ executable yam
     , salak
     , salak-yaml
     , servant-server
+    , servant-swagger
     , text
     , vault
     , yam

@@ -1,6 +1,5 @@
-{-# LANGUAGE CPP                  #-}
-{-# LANGUAGE ImplicitParams       #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE CPP            #-}
+{-# LANGUAGE ImplicitParams #-}
 
 module Yam.Prelude(
   -- * Utilities

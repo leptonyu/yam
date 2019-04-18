@@ -4,11 +4,14 @@ module Yam.Redis(
   , HasRedis
   , redisMiddleware
   , ttlOpts
+  , runR
+  , Connection
   ) where
 
 import           Control.Exception              (bracket)
 import           Control.Monad.IO.Class         (MonadIO)
 import           Control.Monad.Logger.CallStack
+import           Control.Monad.Reader
 import           Data.Default
 import           Data.Menshen
 import           Data.Word
@@ -30,12 +33,26 @@ instance FromProp RedisConfig where
     <$> "url"       .?: url ? pattern "^redis://"
     <*> "max-conns" .?: maxConnections
 
-type HasRedis cxt = HasContextEntry cxt Connection
+type HasRedis cxt = (HasLogger cxt, HasContextEntry cxt Connection)
 
 instance (HasRedis cxt, MonadIO m) => MonadRedis (AppT cxt m) where
   liftRedis a = do
     conn <- getEntry
     liftIO $ runRedis conn a
+
+instance HasRedis cxt => RedisCtx (AppT cxt Redis) (Either Reply) where
+  returnDecode = lift . returnDecode
+
+instance HasRedis cxt => RedisCtx (AppT cxt RedisTx) Queued where
+  returnDecode = lift . returnDecode
+
+runR :: (MonadIO m, HasRedis cxt) => AppT cxt Redis (Either Reply a) -> AppT cxt m a
+runR a = do
+  cxt <- ask
+  v   <- liftRedis (runAppT cxt a)
+  case v of
+    Left  e -> throwS err400 $ showText e
+    Right e -> return e
 
 redisMiddleware :: RedisConfig -> AppMiddleware a (Connection : a)
 redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do

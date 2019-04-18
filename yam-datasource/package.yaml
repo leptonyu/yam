@@ -21,7 +21,6 @@ dependencies:
   - resource-pool
   - monad-logger
   - text
-  - vault
   - servant-server
   - salak
   - data-default

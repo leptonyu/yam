@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c94b2779a636fd95ba745d294ff472511e8b0d54e3e3d306be548bccaf493661
+-- hash: 8a550a6641251f926573828720fb2aac436c2097bfafd2217fa1dfa56ccc6833
 
 name:           yam-datasource
 version:        0.6.0
@@ -41,6 +41,5 @@ library
     , servant-server
     , text
     , unliftio-core
-    , vault
     , yam
   default-language: Haskell2010

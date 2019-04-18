@@ -6,6 +6,8 @@ module Yam.Logger(
   , extensionLogKey
   , LogConfig(..)
   , HasLogger
+  , LogFuncHolder(..)
+  , VaultHolder(..)
   ) where
 
 import           Control.Monad.Logger.CallStack
@@ -77,13 +79,16 @@ addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)
 extensionLogKey :: L.Key Text
 extensionLogKey = unsafePerformIO L.newKey
 
-getLogger :: Maybe L.Vault -> LogFunc -> LogFunc
-getLogger (Just vault) logger =
+getLogger :: Maybe VaultHolder -> LogFuncHolder -> LogFunc
+getLogger (Just (VH vault)) (LF logger) =
   let {-# INLINE nlf #-}
       nlf x (Just t) = addTrace x t
       nlf x _        = x
   in nlf logger $ L.lookup extensionLogKey vault
-getLogger _ logger = logger
+getLogger _ (LF logger) = logger
 
-type HasLogger cxt = (HasContextEntry cxt LogFunc, TryContextEntry cxt L.Vault)
+newtype LogFuncHolder = LF LogFunc
+newtype VaultHolder   = VH L.Vault
+
+type HasLogger cxt = (HasContextEntry cxt LogFuncHolder, TryContextEntry cxt VaultHolder)
 

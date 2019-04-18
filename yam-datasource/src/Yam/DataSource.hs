@@ -65,11 +65,10 @@ query sql params = do
 selectValue :: (PersistField a, MonadUnliftIO m) => T.Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
-type HasDataSource cxt = HasContextEntry cxt DataSource
+type HasDataSource cxt = (HasLogger cxt, HasContextEntry cxt DataSource)
 
 runTrans
   :: ( HasDataSource cxt
-     , HasLogger cxt
      , MonadIO m
      , MonadUnliftIO m)
   => DB (AppT cxt m) a

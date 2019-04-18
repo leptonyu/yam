@@ -3,7 +3,9 @@ module Yam(
     start
   , AppConfig(..)
   , AppT
-  , App
+  , AppV
+  , AppIO
+  , AppSimple
   , getEntry
   , runAppT
   , runVault
@@ -16,7 +18,8 @@ module Yam(
   , HasContextEntry(..)
   , TryContextEntry(..)
   , HasLogger
-  , LogFunc
+  , LogFuncHolder
+  , VaultHolder
   -- * Modules
   -- ** Swagger
   , module Yam.Swagger
@@ -48,7 +51,6 @@ import           Yam.Middleware.Trace
 import           Yam.Prelude
 import           Yam.Swagger
 
-
 newtype AppMiddleware a b = AppMiddleware
   { runAM :: Context a -> Middleware -> (Context b -> Middleware -> LoggingT IO ()) -> LoggingT IO () }
 
@@ -67,13 +69,13 @@ start
   -> SwaggerConfig
   -> Version
   -> IO LogConfig
-  -> (Span -> App cxt ())
-  -> AppMiddleware '[LogFunc] cxt
+  -> (Span -> AppV cxt IO ())
+  -> AppMiddleware '[LogFuncHolder] cxt
   -> Proxy api
-  -> ServerT api (App (Vault ': cxt))
+  -> ServerT api (AppV cxt IO)
   -> IO ()
 start AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am p api =
-  withLogger name logConfig $ \logger -> runAM am (logger :. EmptyContext) id $ \cxt middleware -> do
+  withLogger name logConfig $ \logger -> runAM am (LF logger :. EmptyContext) id $ \cxt middleware -> do
     logInfo $ "Start Service [" <> name <> "] ..."
     let portText = showText port
         settings = defaultSettings
@@ -86,10 +88,10 @@ start AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am p api =
     logInfo      $ "Servant started on port(s): "       <> portText
     liftIO
       $ runSettings settings
-      $ traceMiddleware (runAppT cxt . f)
+      $ traceMiddleware (\v -> runAppT (VH v :. cxt) . f)
       $ middleware
-      $ errorMiddleware (logger :. EmptyContext)
+      $ errorMiddleware (LF logger :. EmptyContext)
       $ serveWithContextAndSwagger sw (baseInfo name vs port) (Proxy @(Vault :> api)) cxt
       $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
 
-
+type AppSimple = AppV '[LogFuncHolder] IO

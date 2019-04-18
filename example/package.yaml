@@ -24,6 +24,7 @@ executables:
     dependencies:
       - yam
       - servant-server
+      - servant-swagger
       - monad-logger
       - salak
       - salak-yaml
