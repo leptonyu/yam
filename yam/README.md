@@ -31,6 +31,6 @@ main = runSalakWith "app" YAML $ do
   al <- require  "yam.application"
   sw <- require  "yam.swagger"
   lc <- requireD "yam.logging"
-  start al sw (makeVersion []) lc (\_ -> return ()) C.id (Proxy @API) service
+  start al sw (makeVersion []) lc spanNoNotifier emptyAM serveWarp (Proxy @API) service
 
 ```

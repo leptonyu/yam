@@ -2,7 +2,7 @@ name:                yam-redis
 version:             0.6.0
 synopsis:            Yam Redis Middleware
 #description:
-homepage:            https://github.com/leptonyu/yam/yam-redis#readme
+homepage:            https://github.com/leptonyu/yam#readme
 license:             BSD3
 author:              Daniel YU
 maintainer:          Daniel YU <leptonyu@gmail.com>
