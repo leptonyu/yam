@@ -15,6 +15,7 @@ module Yam.Redis(
   , redisMiddleware
   , ttlOpts
   , runR
+  , multiE
   , REDIS
   ) where
 
@@ -66,6 +67,12 @@ runR a = do
   case v of
     Left  e -> throwS err400 $ showText e
     Right e -> return e
+
+multiE :: HasRedis cxt => AppT cxt RedisTx (Queued a) -> AppT cxt Redis (TxResult a)
+multiE a = do
+  cxt <- ask
+  lift $ multiExec (runAppT cxt a)
+
 
 redisMiddleware :: RedisConfig -> AppMiddleware a (REDIS : a)
 redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do
