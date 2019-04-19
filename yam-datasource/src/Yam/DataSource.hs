@@ -7,7 +7,7 @@
 -- Portability: portable
 --
 -- Datasource supports for [yam](https://hackage.haskell.org/package/yam).
--- 
+--
 module Yam.DataSource(
   -- * DataSource Types
     DataSourceProvider(..)
@@ -53,6 +53,7 @@ instance FromProp DataSourceConfig where
     <*> "url"             .?: dsUrl
     <*> "max-connections" .?: maxConn
 
+-- | Middleware context type.
 type DataSource = Pool SqlBackend
 
 data DataSourceProvider = DataSourceProvider
@@ -75,6 +76,7 @@ query sql params = do
 selectValue :: (PersistField a, MonadUnliftIO m) => T.Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
+-- | Middleware context.
 type HasDataSource cxt = (HasLogger cxt, HasContextEntry cxt DataSource)
 
 runTrans

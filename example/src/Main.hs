@@ -1,7 +1,6 @@
 {-# LANGUAGE NoPolyKinds #-}
 module Main where
 
-import qualified Control.Category               as C
 import           Control.Monad.Logger.CallStack
 import qualified Data.Text                      as T
 import           Data.Version                   (Version)
@@ -45,4 +44,4 @@ startSimple f v p a = runSalakWith "yam_test" f $ do
   al <- require  "yam.application"
   sw <- require  "yam.swagger"
   lc <- requireD "yam.logging"
-  liftIO $ start al sw v lc (\_ -> return ()) C.id p a
+  liftIO $ start al sw v lc spanNoNotifier emptyAM serveWarp p a

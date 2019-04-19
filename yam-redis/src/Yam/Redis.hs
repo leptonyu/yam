@@ -8,14 +8,14 @@
 -- Portability: portable
 --
 -- Redis supports for [yam](https://hackage.haskell.org/package/yam).
--- 
+--
 module Yam.Redis(
     RedisConfig(..)
   , HasRedis
   , redisMiddleware
   , ttlOpts
   , runR
-  , Connection
+  , REDIS
   ) where
 
 import           Control.Exception              (bracket)
@@ -43,11 +43,14 @@ instance FromProp RedisConfig where
     <$> "url"       .?: url ? pattern "^redis://"
     <*> "max-conns" .?: maxConnections
 
-type HasRedis cxt = (HasLogger cxt, HasContextEntry cxt Connection)
+-- | Middleware context type.
+newtype REDIS = REDIS Connection
+-- | Middleware context.
+type HasRedis cxt = (HasLogger cxt, HasContextEntry cxt REDIS)
 
 instance (HasRedis cxt, MonadIO m) => MonadRedis (AppT cxt m) where
   liftRedis a = do
-    conn <- getEntry
+    REDIS conn <- getEntry
     liftIO $ runRedis conn a
 
 instance HasRedis cxt => RedisCtx (AppT cxt Redis) (Either Reply) where
@@ -64,7 +67,7 @@ runR a = do
     Left  e -> throwS err400 $ showText e
     Right e -> return e
 
-redisMiddleware :: RedisConfig -> AppMiddleware a (Connection : a)
+redisMiddleware :: RedisConfig -> AppMiddleware a (REDIS : a)
 redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do
   logInfo "Redis loaded"
   lf <- askLoggerIO
@@ -72,7 +75,7 @@ redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do
     Left er -> error er
     Right c -> liftIO
       $ bracket (connect c { connectMaxConnections = fromIntegral maxConnections }) disconnect
-      $ \conn -> runLoggingT (f (conn :. cxt) m) lf
+      $ \conn -> runLoggingT (f (REDIS conn :. cxt) m) lf
 
 ttlOpts :: Integer -> SetOpts
 ttlOpts seconds = SetOpts (Just seconds) Nothing Nothing

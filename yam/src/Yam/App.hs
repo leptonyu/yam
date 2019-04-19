@@ -65,6 +65,8 @@ runAppT c a = runReaderT (runAppT' a) c
 instance (HasContextEntry cxt SourcePack, Monad m) => HasSourcePack (AppT cxt m) where
   askSourcePack = getEntry
 
+type HasSalak cxt = HasContextEntry cxt SourcePack
+
 -- | Run Application with 'Vault'.
 runVault :: MonadIO m => Context cxt -> Vault -> AppV cxt IO a -> m a
 runVault c v a = liftIO $ runAppT (VH v :. c) a

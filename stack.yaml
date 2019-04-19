@@ -3,7 +3,7 @@ packages:
 - yam
 - yam-datasource
 - yam-redis
-- example
+# - example
 
 pvp-bounds: both
 nix:

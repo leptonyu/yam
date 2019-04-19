@@ -47,7 +47,7 @@ serveWithContextAndSwagger SwaggerConfig{..} g5 proxy cxt api =
     go _ _ _ = Proxy
 
 -- | Swagger modification
-baseInfo 
+baseInfo
   :: String  -- ^ Hostname
   -> Text    -- ^ Server Name
   -> Version -- ^ Server version

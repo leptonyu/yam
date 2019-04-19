@@ -1,4 +1,5 @@
-{-# LANGUAGE NoPolyKinds #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE NoPolyKinds         #-}
 -- |
 -- Module:      Yam
 -- Copyright:   (c) 2019 Daniel YU
@@ -16,6 +17,7 @@ module Yam(
 
   -- * Yam Server
     start
+  , serveWarp
   -- ** Application Configuration
   , AppConfig(..)
   -- ** Application Context
@@ -23,12 +25,16 @@ module Yam(
   , AppV
   , AppIO
   , AppSimple
+  , Simple
   , runAppT
   , runVault
   , throwS
   -- ** Application Middleware
   , AppMiddleware(..)
+  , emptyAM
   , simpleContext
+  , simpleConfig
+  , simpleConfig'
   , simpleMiddleware
   -- * Modules
   -- ** Logger
@@ -47,6 +53,7 @@ module Yam(
   , serveWithContextAndSwagger
   , baseInfo
   -- * Reexport
+  , spanNoNotifier
   , Span(..)
   , SpanContext(..)
   , SpanTag(..)
@@ -66,6 +73,7 @@ import qualified Control.Category               as C
 import           Control.Monad.Logger.CallStack
 import           Data.Opentracing
 import           Network.Wai
+import           Salak
 import           Servant
 import           Servant.Swagger
 import           Yam.App
@@ -86,7 +94,15 @@ instance C.Category AppMiddleware where
 
 -- | Simple Application Middleware, just provide a config to context.
 simpleContext :: a -> AppMiddleware cxt (a ': cxt)
-simpleContext a = AppMiddleware $ \ c m f -> f (a :. c) m
+simpleContext a = AppMiddleware $ \c m f -> f (a :. c) m
+
+-- | Simple Application Middleware, just provide a config to context.
+simpleConfig' :: (HasSalak cxt, FromProp a) => Text -> (a -> AppT cxt (LoggingT IO) b) -> AppMiddleware cxt (b ': cxt)
+simpleConfig' key g = AppMiddleware $ \c m f -> runAppT c (require key) >>= \a -> runAppT c (g a) >>= \b -> f (b :. c) m
+
+-- | Simple Application Middleware, just provide a config to context.
+simpleConfig :: (HasSalak cxt, FromProp a) => Text -> AppMiddleware cxt (a ': cxt)
+simpleConfig key = simpleConfig' key return
 
 -- | Simple Application Middleware, promote a 'Middleware' to 'AppMiddleware'
 simpleMiddleware :: Middleware -> AppMiddleware cxt cxt
@@ -102,32 +118,50 @@ start
   -> Version -- ^ Application Version
   -> IO LogConfig -- ^ Logger Config
   -> (Span -> AppV cxt IO ()) -- ^ Opentracing notifier
-  -> AppMiddleware '[LogFuncHolder] cxt -- ^ Application Middleware
+  -> AppMiddleware Simple cxt -- ^ Application Middleware
+  -> (AppConfig -> Application -> IO ()) -- ^ Run Application
   -> Proxy api -- ^ Application API Proxy
   -> ServerT api (AppV cxt IO) -- ^ Application API Server
   -> IO ()
-start AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am p api =
-  withLogger name logConfig $ \logger -> runAM am (LF logger :. EmptyContext) id $ \cxt middleware -> do
+start ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
+  withLogger name logConfig $ \logger -> do
     logInfo $ "Start Service [" <> name <> "] ..."
     let portText = showText port
-        settings = defaultSettings
-                 & setPort port
-                 & setOnException (\_ _ -> return ())
-                 & setOnExceptionResponse whenException
-                 & setSlowlorisSize slowlorisSize
-    when enabled $
-      logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
-    logInfo      $ "Servant started on port(s): "       <> portText
-    liftIO
-      $ runSettings settings
-      $ traceMiddleware (\v -> runAppT (VH v :. cxt) . f)
-      $ middleware
-      $ errorMiddleware (LF logger :. EmptyContext)
-      $ serveWithContextAndSwagger sw (baseInfo hostname name vs port) (Proxy @(Vault :> api)) cxt
-      $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
+        baseCxt  = LF logger :. EmptyContext
+    runAM am baseCxt id $ \cxt middleware -> do
+      when enabled $
+        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
+      logInfo      $ "Servant started on port(s): "       <> portText
+      liftIO
+        $ runHttp ac
+        $ traceMiddleware (\v -> runAppT (VH v :. cxt) . f)
+        $ middleware
+        $ errorMiddleware baseCxt
+        $ serveWithContextAndSwagger sw (baseInfo hostname name vs port) (Proxy @(Vault :> api)) cxt
+        $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
+
+-- | default http server by warp.
+serveWarp :: AppConfig -> Application -> IO ()
+serveWarp AppConfig{..} = runSettings
+  $ defaultSettings
+  & setPort port
+  & setOnException (\_ _ -> return ())
+  & setOnExceptionResponse whenException
+  & setSlowlorisSize slowlorisSize
+
+-- | Empty span notifier.
+spanNoNotifier :: Span -> AppV cxt IO ()
+spanNoNotifier _ = return ()
+
+-- | Empty Application Middleware.
+emptyAM :: AppMiddleware cxt cxt
+emptyAM = C.id
+
+-- | Simple Application context
+type Simple = '[LogFuncHolder]
 
 -- | Simple Application with logger context.
-type AppSimple = AppV '[LogFuncHolder] IO
+type AppSimple = AppV Simple IO
 
 
 -- $use
@@ -138,12 +172,12 @@ type AppSimple = AppV '[LogFuncHolder] IO
 -- > import           Yam
 -- > import qualified Control.Category    as C
 -- > import           Data.Version
--- > 
+-- >
 -- > type API = "hello" :> Get '[PlainText] Text
--- > 
+-- >
 -- > service :: ServerT API AppSimple
 -- > service = return "world"
--- > 
+-- >
 -- > main = runSalakWith "app" YAML $ do
 -- >   al <- require  "yam.application"
 -- >   sw <- require  "yam.swagger"

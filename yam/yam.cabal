@@ -4,11 +4,11 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5bfa3058ff64ab711485d3fbcea2ee7cc32a30b6c1eaf2785facf79d5c239603
+-- hash: a972e1fee960d4f2132a22683280e2ffb89082f41055b0002c22eb569b1c4fc3
 
 name:           yam
 version:        0.6.0
-synopsis:       A wrapper for servant.
+synopsis:       A wrapper of servant
 description:    A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 category:       Web
 homepage:       https://github.com/leptonyu/yam/yam#readme
