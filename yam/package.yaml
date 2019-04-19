@@ -1,5 +1,5 @@
 name:                yam
-version:             0.6.0
+version:             0.6.1
 synopsis:            A wrapper of servant
 description:         A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 homepage:            https://github.com/leptonyu/yam#readme

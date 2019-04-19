@@ -3,12 +3,9 @@ module Main where
 
 import           Control.Monad.Logger.CallStack
 import qualified Data.Text                      as T
-import           Data.Version                   (Version)
 import           Paths_example                  (version)
-import           Salak
 import           Salak.Yaml
 import           Servant
-import           Servant.Swagger
 import           Yam
 
 type App = AppV Simple IO
@@ -29,19 +26,4 @@ servantService :: App T.Text
 servantService = throwS err401 "Servant"
 
 main :: IO ()
-main = startSimple YAML version (Proxy :: Proxy UserApi) service
-
-type Simple = '[ LogFuncHolder ]
-
-startSimple
-  :: forall file api. (HasLoad file, HasSwagger api , HasServer api Simple)
-  => file
-  -> Version
-  -> Proxy api
-  -> ServerT api (AppV Simple IO)
-  -> IO ()
-startSimple f v p a = runSalakWith "yam_test" f $ do
-  al <- require  "yam.application"
-  sw <- require  "yam.swagger"
-  lc <- requireD "yam.logging"
-  liftIO $ start al sw v lc spanNoNotifier emptyAM serveWarp p a
+main = start "yam_test" YAML version (return emptyAM) (Proxy @UserApi) (return service)

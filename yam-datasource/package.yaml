@@ -1,5 +1,5 @@
 name:                yam-datasource
-version:             0.6.0
+version:             0.6.1
 synopsis:            Yam DataSource Middleware
 #description:
 homepage:            https://github.com/leptonyu/yam#readme

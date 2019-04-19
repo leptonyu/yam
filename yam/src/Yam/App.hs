@@ -19,6 +19,9 @@ type AppIO cxt = AppT cxt IO
 -- | Application with 'Vault'
 type AppV cxt = AppT (VaultHolder : cxt)
 
+-- | Application with 'SourcePack'
+type AppS cxt = AppV (SourcePack : cxt)
+
 instance MonadTrans (AppT cxt) where
   lift = AppT . lift
 

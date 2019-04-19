@@ -17,6 +17,7 @@ module Yam(
 
   -- * Yam Server
     start
+  , start'
   , serveWarp
   -- ** Application Configuration
   , AppConfig(..)
@@ -26,6 +27,7 @@ module Yam(
   , AppIO
   , AppSimple
   , Simple
+  , Simple'
   , runAppT
   , runVault
   , throwS
@@ -67,11 +69,16 @@ module Yam(
   , liftIO
   , fromMaybe
   , throw
+  , logInfo
+  , logError
+  , logWarn
+  , logDebug
   ) where
 
 import qualified Control.Category               as C
 import           Control.Monad.Logger.CallStack
 import           Data.Opentracing
+import           Data.Text                      (pack)
 import           Network.Wai
 import           Salak
 import           Servant
@@ -109,7 +116,7 @@ simpleMiddleware :: Middleware -> AppMiddleware cxt cxt
 simpleMiddleware m = AppMiddleware $ \c m2 f -> f c (m . m2)
 
 -- | Standard Starter of Yam.
-start
+start'
   :: forall api cxt
   . ( HasServer api cxt
     , HasSwagger api)
@@ -118,12 +125,12 @@ start
   -> Version -- ^ Application Version
   -> IO LogConfig -- ^ Logger Config
   -> (Span -> AppV cxt IO ()) -- ^ Opentracing notifier
-  -> AppMiddleware Simple cxt -- ^ Application Middleware
+  -> AppMiddleware Simple' cxt -- ^ Application Middleware
   -> (AppConfig -> Application -> IO ()) -- ^ Run Application
   -> Proxy api -- ^ Application API Proxy
   -> ServerT api (AppV cxt IO) -- ^ Application API Server
   -> IO ()
-start ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
+start' ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
   withLogger name logConfig $ \logger -> do
     logInfo $ "Start Service [" <> name <> "] ..."
     let portText = showText port
@@ -139,6 +146,28 @@ start ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
         $ errorMiddleware baseCxt
         $ serveWithContextAndSwagger sw (baseInfo hostname name vs port) (Proxy @(Vault :> api)) cxt
         $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
+
+-- | Standard Starter of Yam.
+start
+  :: forall file api cxt
+  . ( HasLoad file
+    , HasServer api cxt
+    , HasSwagger api)
+  => String -- ^ File config name
+  -> file -- ^ Config file format
+  -> Version -- ^ Version
+  -> RunSalakT IO (AppMiddleware Simple cxt) -- ^ Application Middleware
+  -> Proxy api -- ^ Application API Proxy
+  -> RunSalakT IO (ServerT api (AppV cxt IO)) -- ^ Application API Server
+  -> IO ()
+start cfg file v md p s = runSalakWith cfg file $ do
+  app <- require  "application"
+  b   <- require  "swagger"
+  c   <- requireD "logging"
+  sp  <- askSourcePack
+  md' <- md
+  s'  <- s
+  liftIO $ start' app {name = pack cfg <> "-server" } b v c spanNoNotifier (md' C.. simpleContext sp) serveWarp p s'
 
 -- | default http server by warp.
 serveWarp :: AppConfig -> Application -> IO ()
@@ -158,19 +187,20 @@ emptyAM :: AppMiddleware cxt cxt
 emptyAM = C.id
 
 -- | Simple Application context
-type Simple = '[LogFuncHolder]
+type Simple' = '[LogFuncHolder]
+
+-- | Simple Application context
+type Simple = SourcePack : Simple'
 
 -- | Simple Application with logger context.
-type AppSimple = AppV Simple IO
+type AppSimple = AppV Simple' IO
 
 
 -- $use
 --
--- > import           Salak
 -- > import           Salak.Yaml
 -- > import           Servant
 -- > import           Yam
--- > import qualified Control.Category    as C
 -- > import           Data.Version
 -- >
 -- > type API = "hello" :> Get '[PlainText] Text
@@ -178,9 +208,5 @@ type AppSimple = AppV Simple IO
 -- > service :: ServerT API AppSimple
 -- > service = return "world"
 -- >
--- > main = runSalakWith "app" YAML $ do
--- >   al <- require  "yam.application"
--- >   sw <- require  "yam.swagger"
--- >   lc <- requireD "yam.logging"
--- >   start al sw (makeVersion []) lc spanNoNotifier emptyAM serveWarp (Proxy @API) service
+-- > main = start "app" YAML (makeVersion []) (return emptyAM) (Proxy @API) (return service)
 

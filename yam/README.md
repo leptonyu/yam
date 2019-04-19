@@ -15,11 +15,9 @@ Servant based Web Wrapper for Production in Haskell.
 
 ```Haskell
 
-import           Salak
 import           Salak.Yaml
 import           Servant
 import           Yam
-import qualified Control.Category    as C
 import           Data.Version
 
 type API = "hello" :> Get '[PlainText] Text
@@ -27,10 +25,6 @@ type API = "hello" :> Get '[PlainText] Text
 service :: ServerT API AppSimple
 service = return "world"
 
-main = runSalakWith "app" YAML $ do
-  al <- require  "yam.application"
-  sw <- require  "yam.swagger"
-  lc <- requireD "yam.logging"
-  start al sw (makeVersion []) lc spanNoNotifier emptyAM serveWarp (Proxy @API) service
+main = start "app" YAML (makeVersion []) (return emptyAM) (Proxy @API) (return service)
 
 ```
