@@ -21,6 +21,7 @@ dependencies:
   - menshen
   - monad-logger
   - servant-server
+  - bytestring
 
 library:
   source-dirs: src

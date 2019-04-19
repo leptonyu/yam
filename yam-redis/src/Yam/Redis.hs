@@ -23,6 +23,7 @@ import           Control.Exception              (bracket)
 import           Control.Monad.IO.Class         (MonadIO)
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
+import qualified Data.ByteString.Char8          as BC
 import           Data.Default
 import           Data.Menshen
 import           Data.Word
@@ -60,19 +61,19 @@ instance HasRedis cxt => RedisCtx (AppT cxt Redis) (Either Reply) where
 instance HasRedis cxt => RedisCtx (AppT cxt RedisTx) Queued where
   returnDecode = lift . returnDecode
 
-runR :: (MonadIO m, HasRedis cxt) => AppT cxt Redis (Either Reply a) -> AppT cxt m a
+runR :: (MonadIO m, HasRedis cxt) => Redis (Either Reply a) -> AppT cxt m a
 runR a = do
-  cxt <- ask
-  v   <- liftRedis (runAppT cxt a)
+  v   <- liftRedis a
   case v of
     Left  e -> throwS err400 $ showText e
     Right e -> return e
 
-multiE :: HasRedis cxt => AppT cxt RedisTx (Queued a) -> AppT cxt Redis (TxResult a)
-multiE a = do
-  cxt <- ask
-  lift $ multiExec (runAppT cxt a)
-
+multiE :: RedisTx (Queued a) -> Redis (Either Reply a)
+multiE a = go <$> multiExec a
+  where
+    go (TxSuccess o) = Right o
+    go (TxAborted  ) = Left $ Error "RedisTx aborted"
+    go (TxError   e) = Left $ Error $ BC.pack e
 
 redisMiddleware :: RedisConfig -> AppMiddleware a (REDIS : a)
 redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do

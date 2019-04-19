@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a55dade46316d4fe85373432424165de10796875ffcc38e9e896a63bb8911a14
+-- hash: 585921c1e61a0acc5501aacd0d371169ab31b20a72c92c424141157764102720
 
 name:           yam-redis
 version:        0.6.0
@@ -31,6 +31,7 @@ library
   ghc-options: -Wall
   build-depends:
       base >=4.10 && <5
+    , bytestring
     , data-default
     , hedis
     , menshen
