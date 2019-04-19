@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 8a550a6641251f926573828720fb2aac436c2097bfafd2217fa1dfa56ccc6833
+-- hash: 2825b1b12927fb631a49c5b0347858f6cad7241bec39c967721dc605e74f5414
 
 name:           yam-datasource
 version:        0.6.0
@@ -34,7 +34,7 @@ library
     , conduit
     , data-default
     , monad-logger
-    , persistent
+    , persistent >=2.8.0 && <2.11
     , resource-pool
     , resourcet
     , salak

@@ -4,6 +4,8 @@ packages:
 - yam-datasource
 - yam-redis
 # - example
+extra-deps:
+- persistent-2.10.0
 
 pvp-bounds: both
 nix:
