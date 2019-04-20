@@ -10,13 +10,12 @@
 -- Redis supports for [yam](https://hackage.haskell.org/package/yam).
 --
 module Yam.Redis(
-    RedisConfig(..)
-  , HasRedis
+    HasRedis
+  , REDIS
   , redisMiddleware
   , ttlOpts
   , runR
   , multiE
-  , REDIS
   ) where
 
 import           Control.Exception              (bracket)
@@ -25,25 +24,28 @@ import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
 import qualified Data.ByteString.Char8          as BC
 import           Data.Default
-import           Data.Menshen
 import           Data.Word
 import           Database.Redis
 import           Salak
 import           Servant
 import           Yam
 
-data RedisConfig = RedisConfig
-  { url            :: String
-  , maxConnections :: Word16
-  } deriving (Eq, Show)
+instance Default ConnectInfo where
+  def = defaultConnectInfo
 
-instance Default RedisConfig where
-  def = RedisConfig "redis://localhost/0" 50
+instance FromProp ConnectInfo where
+  fromProp = ConnInfo
+    <$> "host"      .?: connectHost
+    <*> "port"      .?: connectPort
+    <*> "password"  .?: connectAuth
+    <*> "database"  .?: connectDatabase
+    <*> "max-conns" .?: connectMaxConnections
+    <*> "max-idle"  .?: connectMaxIdleTime
+    <*> return Nothing
+    <*> return Nothing
 
-instance FromProp RedisConfig where
-  fromProp = RedisConfig
-    <$> "url"       .?: url ? pattern "^redis://"
-    <*> "max-conns" .?: maxConnections
+instance FromProp PortID where
+  fromProp = PortNumber . fromIntegral <$> (fromProp :: Prop Word16)
 
 -- | Middleware context type.
 newtype REDIS = REDIS Connection
@@ -54,12 +56,6 @@ instance (HasRedis cxt, MonadIO m) => MonadRedis (AppT cxt m) where
   liftRedis a = do
     REDIS conn <- getEntry
     liftIO $ runRedis conn a
-
-instance HasRedis cxt => RedisCtx (AppT cxt Redis) (Either Reply) where
-  returnDecode = lift . returnDecode
-
-instance HasRedis cxt => RedisCtx (AppT cxt RedisTx) Queued where
-  returnDecode = lift . returnDecode
 
 runR :: (MonadIO m, HasRedis cxt) => Redis (Either Reply a) -> AppT cxt m a
 runR a = do
@@ -75,15 +71,13 @@ multiE a = go <$> multiExec a
     go (TxAborted  ) = Left $ Error "RedisTx aborted"
     go (TxError   e) = Left $ Error $ BC.pack e
 
-redisMiddleware :: RedisConfig -> AppMiddleware a (REDIS : a)
-redisMiddleware RedisConfig{..} = AppMiddleware $ \cxt m f -> do
-  logInfo "Redis loaded"
-  lf <- askLoggerIO
-  case parseConnectInfo url of
-    Left er -> error er
-    Right c -> liftIO
-      $ bracket (connect c { connectMaxConnections = fromIntegral maxConnections }) disconnect
-      $ \conn -> runLoggingT (f (REDIS conn :. cxt) m) lf
+redisMiddleware :: RunSalakT IO (AppMiddleware a (REDIS : a))
+redisMiddleware = do
+  ci <- require "redis"
+  return $ AppMiddleware $ \cxt m f -> do
+    logInfo "Redis loaded"
+    lf <- askLoggerIO
+    liftIO $ bracket (connect ci) disconnect $ \conn -> runLoggingT (f (REDIS conn :. cxt) m) lf
 
 ttlOpts :: Integer -> SetOpts
 ttlOpts seconds = SetOpts (Just seconds) Nothing Nothing

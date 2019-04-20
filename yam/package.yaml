@@ -35,6 +35,8 @@ dependencies:
   - warp
   - http-types
   - servant-server >= 0.16 && < 0.17
+  - servant-client >= 0.16 && < 0.17
+  - http-client
   - servant-swagger
   - servant-swagger-ui
   - swagger2
@@ -45,6 +47,8 @@ library:
   source-dirs: src
   exposed-modules:
     - Yam
+    - Yam.Middleware.Client
+
   other-modules:
     - Yam.Swagger
     - Yam.Logger
@@ -52,8 +56,13 @@ library:
     
     - Yam.Prelude
     - Yam.Config
+
+    - Yam.Middleware
     - Yam.Middleware.Trace
     - Yam.Middleware.Error
+    
+    - Yam.Server
+    - Yam.Server.Refresh
     
     - Data.Opentracing
     - Data.Opentracing.Types

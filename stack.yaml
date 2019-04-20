@@ -3,9 +3,11 @@ packages:
 - yam
 - yam-datasource
 - yam-redis
-# - example
+- example
 extra-deps:
 - persistent-2.10.0
+- salak-0.2.9.1
+- salak-yaml-0.2.9.1
 
 pvp-bounds: both
 nix:

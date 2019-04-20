@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 94f312c5d8ada648a8465c603450a8976e6f25696e00a360c9ec5265818efd4d
+-- hash: 0c3d877e58123df42224cd9c2b5705ba8443ea07a8b14db484e7a9aaac6556f1
 
 name:           yam-redis
 version:        0.6.1
@@ -39,5 +39,6 @@ library
     , mtl
     , salak
     , servant-server
+    , text
     , yam
   default-language: Haskell2010

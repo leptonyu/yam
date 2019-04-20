@@ -15,6 +15,7 @@ dependencies:
   - base >= 4.10 && < 5
   - yam
   - salak
+  - text
   - mtl
   - data-default
   - hedis

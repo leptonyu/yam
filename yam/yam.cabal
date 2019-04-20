@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 711d5edcc527d69a2bcd6706e53f64099a06ed10b1c53df61a575380308ace6b
+-- hash: a594130dcd0435e18e02e8dd659c8f8d1d465d6b20eba166ccb596083f91c815
 
 name:           yam
 version:        0.6.1
@@ -25,14 +25,18 @@ extra-source-files:
 library
   exposed-modules:
       Yam
+      Yam.Middleware.Client
   other-modules:
       Yam.Swagger
       Yam.Logger
       Yam.App
       Yam.Prelude
       Yam.Config
+      Yam.Middleware
       Yam.Middleware.Trace
       Yam.Middleware.Error
+      Yam.Server
+      Yam.Server.Refresh
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer
@@ -49,6 +53,7 @@ library
     , bytestring
     , data-default
     , fast-logger
+    , http-client
     , http-types
     , lens
     , menshen
@@ -58,6 +63,7 @@ library
     , reflection
     , salak >=0.2.9 && <0.3
     , scientific
+    , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui
@@ -83,9 +89,13 @@ test-suite spec
       Yam.App
       Yam.Config
       Yam.Logger
+      Yam.Middleware
+      Yam.Middleware.Client
       Yam.Middleware.Error
       Yam.Middleware.Trace
       Yam.Prelude
+      Yam.Server
+      Yam.Server.Refresh
       Yam.Swagger
       Paths_yam
   hs-source-dirs:
@@ -103,6 +113,7 @@ test-suite spec
     , data-default
     , fast-logger
     , hspec ==2.*
+    , http-client
     , http-types
     , lens
     , menshen
@@ -112,6 +123,7 @@ test-suite spec
     , reflection
     , salak >=0.2.9 && <0.3
     , scientific
+    , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui

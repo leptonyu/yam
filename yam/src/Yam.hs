@@ -86,34 +86,12 @@ import           Servant.Swagger
 import           Yam.App
 import           Yam.Config
 import           Yam.Logger
+import           Yam.Middleware
 import           Yam.Middleware.Error
 import           Yam.Middleware.Trace
 import           Yam.Prelude
+import           Yam.Server
 import           Yam.Swagger
-
--- | Application Middleware.
-newtype AppMiddleware a b = AppMiddleware
-  { runAM :: Context a -> Middleware -> (Context b -> Middleware -> LoggingT IO ()) -> LoggingT IO () }
-
-instance C.Category AppMiddleware where
-  id = AppMiddleware $ \a m f -> f a m
-  (AppMiddleware fbc) . (AppMiddleware fab) = AppMiddleware $ \a m f -> fab a m $ \b m1 -> fbc b m1 f
-
--- | Simple Application Middleware, just provide a config to context.
-simpleContext :: a -> AppMiddleware cxt (a ': cxt)
-simpleContext a = AppMiddleware $ \c m f -> f (a :. c) m
-
--- | Simple Application Middleware, just provide a config to context.
-simpleConfig' :: (HasSalak cxt, FromProp a) => Text -> (a -> AppT cxt (LoggingT IO) b) -> AppMiddleware cxt (b ': cxt)
-simpleConfig' key g = AppMiddleware $ \c m f -> runAppT c (require key) >>= \a -> runAppT c (g a) >>= \b -> f (b :. c) m
-
--- | Simple Application Middleware, just provide a config to context.
-simpleConfig :: (HasSalak cxt, FromProp a) => Text -> AppMiddleware cxt (a ': cxt)
-simpleConfig key = simpleConfig' key return
-
--- | Simple Application Middleware, promote a 'Middleware' to 'AppMiddleware'
-simpleMiddleware :: Middleware -> AppMiddleware cxt cxt
-simpleMiddleware m = AppMiddleware $ \c m2 f -> f c (m . m2)
 
 -- | Standard Starter of Yam.
 start'
@@ -151,7 +129,8 @@ start' ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
 start
   :: forall file api cxt
   . ( HasLoad file
-    , HasServer api cxt
+    , HasLogger cxt
+    , HasServer api  cxt
     , HasSwagger api)
   => String -- ^ File config name
   -> file -- ^ Config file format
@@ -160,14 +139,20 @@ start
   -> Proxy api -- ^ Application API Proxy
   -> RunSalakT IO (ServerT api (AppV cxt IO)) -- ^ Application API Server
   -> IO ()
-start cfg file v md p s = runSalakWith cfg file $ do
+start cfg file v mkAppMD p mkServer = runSalakWith cfg file $ do
   app <- require  "application"
+  let an = if Yam.Config.name app == "application" then pack cfg <> "-server" else Yam.Config.name app
   b   <- require  "swagger"
   c   <- requireD "logging"
+  md' <- mkAppMD
+  s'  <- mkServer
   sp  <- askSourcePack
-  md' <- md
-  s'  <- s
-  liftIO $ start' app {name = pack cfg <> "-server" } b v c spanNoNotifier (md' C.. simpleContext sp) serveWarp p s'
+  (en, aep) <- actuatorEndpoint
+  let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> IO ()
+      go = start' app {name = an } b v c spanNoNotifier (md' C.. simpleContext sp) serveWarp
+  liftIO $ if en
+    then go (Proxy @(api :<|> ActuatorEndpoint)) (s' :<|> aep)
+    else go p s'
 
 -- | default http server by warp.
 serveWarp :: AppConfig -> Application -> IO ()
