@@ -43,6 +43,7 @@ module Yam.Prelude(
   , Middleware
   , RunSalak(..)
   , liftSalak
+  , liftX
   ) where
 
 import           Control.Exception                   hiding (Handler)
@@ -85,8 +86,22 @@ instance MonadIO RunSalak where
 instance MonadLogger RunSalak where
   monadLoggerLog a b c d = RunSalak (monadLoggerLog a b c d)
 
+instance MonadLoggerIO RunSalak where
+  askLoggerIO = RunSalak askLoggerIO
+
+instance MonadUnliftIO RunSalak where
+  askUnliftIO = RunSalak $ do
+    f  <- lift askUnliftIO
+    lf <- askLoggerIO
+    return $ UnliftIO $ \ma -> unliftIO f (runLoggingT (unSalak ma) lf)
+
 liftSalak :: RunSalakT IO a -> RunSalak a
 liftSalak = RunSalak . lift
+
+liftX :: LoggingT IO a -> RunSalak a
+liftX f = do
+  lf <- askLoggerIO
+  liftIO $ runLoggingT f lf
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 

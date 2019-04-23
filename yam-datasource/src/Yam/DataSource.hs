@@ -60,6 +60,7 @@ data DataSourceProvider = DataSourceProvider
   { datasource :: LoggingT IO DataSource
   , migration  :: DB (LoggingT IO) ()
   , dbtype     :: T.Text
+  , check      :: DataSource -> IO HealthStatus
   }
 -- SqlPersistT ~ ReaderT SqlBackend
 type DB = SqlPersistT
@@ -91,11 +92,11 @@ runTrans a = do
   withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn a c { connLogFunc = logger }
 
 datasourceMiddleware :: DataSourceProvider -> AppMiddleware a (DataSource ': a)
-datasourceMiddleware DataSourceProvider{..} = AppMiddleware $ \c m f -> askLoggerIO >>= \lc ->
+datasourceMiddleware DataSourceProvider{..} = AppMiddleware $ \c m h f -> askLoggerIO >>= \lc ->
   liftIO $ bracket
     (runLoggingT datasource lc)
     destroyAllResources
-    (\ds -> runLoggingT (f (ds :. c) m) lc)
+    (\ds -> runLoggingT (f (ds :. c) m (mergeHealth (check ds) "datasource" h)) lc)
 
 
 

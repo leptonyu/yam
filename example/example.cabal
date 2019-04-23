@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 54744fbdbc5e7917c3511762dac56484d92fa71b87b87dbecae7a4a3e864d372
+-- hash: 7f2e5500bbc2f91f203b1b5cd5b694703810cb1e1451cef6e96007ba45891cbf
 
 name:           example
 version:        0.1.0.0
@@ -37,6 +37,7 @@ executable yam
     , text
     , vault
     , yam
+    , yam-redis
   if os(linux)
     ld-options: -static
   default-language: Haskell2010

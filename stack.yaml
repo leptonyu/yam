@@ -6,8 +6,8 @@ packages:
 - example
 extra-deps:
 - persistent-2.10.0
-- salak-0.2.9.2
-- salak-yaml-0.2.9.2
+- salak-0.2.9.3
+- salak-yaml-0.2.9.3
 
 pvp-bounds: both
 nix:

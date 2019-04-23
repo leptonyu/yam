@@ -28,6 +28,7 @@ executables:
       - monad-logger
       - salak
       - salak-yaml
+      - yam-redis
       - text
       - vault
 

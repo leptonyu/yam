@@ -71,13 +71,17 @@ multiE a = go <$> multiExec a
     go (TxAborted  ) = Left $ Error "RedisTx aborted"
     go (TxError   e) = Left $ Error $ BC.pack e
 
-redisMiddleware :: RunSalakT IO (AppMiddleware a (REDIS : a))
+redisMiddleware :: RunSalak (AppMiddleware a (REDIS : a))
 redisMiddleware = do
   ci <- require "redis"
-  return $ AppMiddleware $ \cxt m f -> do
+  return $ AppMiddleware $ \cxt m h f -> do
     logInfo "Redis loaded"
     lf <- askLoggerIO
-    liftIO $ bracket (connect ci) disconnect $ \conn -> runLoggingT (f (REDIS conn :. cxt) m) lf
+    liftIO
+      $ bracket (connect ci) disconnect
+      $ \conn -> runLoggingT (f (REDIS conn :. cxt) m (mergeHealth (go conn) "redis" h)) lf
+  where
+    go c = runRedis c ping >> return UP
 
 ttlOpts :: Integer -> SetOpts
 ttlOpts seconds = SetOpts (Just seconds) Nothing Nothing

@@ -7,8 +7,9 @@ import           Paths_example                  (version)
 import           Salak.Yaml
 import           Servant
 import           Yam
+import           Yam.Redis
 
-type App = AppV Simple IO
+type App = AppV (REDIS : Simple) IO
 
 newtype User = User { user :: T.Text } deriving (Eq, Show)
 
@@ -26,4 +27,4 @@ servantService :: App T.Text
 servantService = throwS err401 "Servant"
 
 main :: IO ()
-main = start "yam_test" YAML version (return emptyAM) (Proxy @UserApi) (return service)
+main = start "yam_test" YAML version redisMiddleware (Proxy @UserApi) (return service)

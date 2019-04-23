@@ -28,10 +28,10 @@ type ActuatorEndpoint = "actuator" :>
   :<|> HealthEndpoint
   )
 
-endpoint :: HasLogger cxt => ActuatorConfig -> IO ReloadResult -> ServerT ActuatorEndpoint (AppV cxt IO)
-endpoint ActuatorConfig{..} rr = refreshEndpoint rr refresh :<|> healthEndpoint health
+endpoint :: HasLogger cxt => ActuatorConfig -> IO HealthResult -> IO ReloadResult -> ServerT ActuatorEndpoint (AppV cxt IO)
+endpoint ActuatorConfig{..} hr rr = refreshEndpoint rr refresh :<|> healthEndpoint hr health
 
-actuatorEndpoint ::  HasLogger cxt => RunSalak (Bool, ServerT ActuatorEndpoint (AppV cxt IO))
-actuatorEndpoint = do
+actuatorEndpoint ::  HasLogger cxt => IO HealthResult -> RunSalak (Bool, ServerT ActuatorEndpoint (AppV cxt IO))
+actuatorEndpoint hr = do
   ac@ActuatorConfig{..} <- require "actuator"
-  (enabled,) <$> liftSalak (exec $ return . endpoint ac)
+  (enabled,) <$> liftSalak (exec $ return . endpoint ac hr)
