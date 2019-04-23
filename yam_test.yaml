@@ -2,3 +2,5 @@ application:
   name: hello
 actuator:
   enabled: true
+
+xxx.xxx: xxx

@@ -27,7 +27,6 @@ module Yam(
   , AppIO
   , AppSimple
   , Simple
-  , Simple'
   , runAppT
   , runVault
   , throwS
@@ -101,29 +100,28 @@ start'
   => AppConfig -- ^ Application Config
   -> SwaggerConfig -- ^ SwaggerConfig
   -> Version -- ^ Application Version
-  -> IO LogConfig -- ^ Logger Config
+  -> LogFunc -- ^ Logger
   -> (Span -> AppV cxt IO ()) -- ^ Opentracing notifier
-  -> AppMiddleware Simple' cxt -- ^ Application Middleware
+  -> AppMiddleware Simple cxt -- ^ Application Middleware
   -> (AppConfig -> Application -> IO ()) -- ^ Run Application
   -> Proxy api -- ^ Application API Proxy
   -> ServerT api (AppV cxt IO) -- ^ Application API Server
   -> IO ()
-start' ac@AppConfig{..} sw@SwaggerConfig{..} vs logConfig f am runHttp p api =
-  withLogger name logConfig $ \logger -> do
-    logInfo $ "Start Service [" <> name <> "] ..."
-    let portText = showText port
-        baseCxt  = LF logger :. EmptyContext
-    runAM am baseCxt id $ \cxt middleware -> do
-      when enabled $
-        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
-      logInfo      $ "Servant started on port(s): "       <> portText
-      liftIO
-        $ runHttp ac
-        $ traceMiddleware (\v -> runAppT (VH v :. cxt) . f)
-        $ middleware
-        $ errorMiddleware baseCxt
-        $ serveWithContextAndSwagger sw (baseInfo hostname name vs port) (Proxy @(Vault :> api)) cxt
-        $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
+start' ac@AppConfig{..} sw@SwaggerConfig{..} vs logger f am runHttp p api = (`runLoggingT` logger) $ do
+  logInfo $ "Start Service [" <> name <> "] ..."
+  let portText = showText port
+      baseCxt  = LF logger :. EmptyContext
+  runAM am baseCxt id $ \cxt middleware -> do
+    when enabled $
+      logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
+    logInfo      $ "Servant started on port(s): "       <> portText
+    liftIO
+      $ runHttp ac
+      $ traceMiddleware (\v -> runAppT (VH v :. cxt) . f)
+      $ middleware
+      $ errorMiddleware baseCxt
+      $ serveWithContextAndSwagger sw (baseInfo hostname name vs port) (Proxy @(Vault :> api)) cxt
+      $ \v -> hoistServerWithContext p (Proxy @cxt) (nt cxt v) api
 
 -- | Standard Starter of Yam.
 start
@@ -135,24 +133,25 @@ start
   => String -- ^ File config name
   -> file -- ^ Config file format
   -> Version -- ^ Version
-  -> RunSalakT IO (AppMiddleware Simple cxt) -- ^ Application Middleware
+  -> RunSalak (AppMiddleware Simple cxt) -- ^ Application Middleware
   -> Proxy api -- ^ Application API Proxy
-  -> RunSalakT IO (ServerT api (AppV cxt IO)) -- ^ Application API Server
+  -> RunSalak (ServerT api (AppV cxt IO)) -- ^ Application API Server
   -> IO ()
 start cfg file v mkAppMD p mkServer = runSalakWith cfg file $ do
+  c   <- requireD "logging"
   app <- require  "application"
   let an = if Yam.Config.name app == "application" then pack cfg <> "-server" else Yam.Config.name app
-  b   <- require  "swagger"
-  c   <- requireD "logging"
-  md' <- mkAppMD
-  s'  <- mkServer
-  sp  <- askSourcePack
-  (en, aep) <- actuatorEndpoint
-  let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> IO ()
-      go = start' app {name = an } b v c spanNoNotifier (md' C.. simpleContext sp) serveWarp
-  liftIO $ if en
-    then go (Proxy @(api :<|> ActuatorEndpoint)) (s' :<|> aep)
-    else go p s'
+  withLogger an c $ \logger -> unSalak $ do
+    b   <- require  "swagger"
+    md' <- mkAppMD
+    s'  <- mkServer
+    (en, aep) <- actuatorEndpoint
+    readLogs >>= mapM_ (logInfo . ("Parsing " <>))
+    let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> IO ()
+        go = start' app {name = an } b v logger spanNoNotifier md' serveWarp
+    liftIO $ if en
+      then go (Proxy @(api :<|> ActuatorEndpoint)) (s' :<|> aep)
+      else go p s'
 
 -- | default http server by warp.
 serveWarp :: AppConfig -> Application -> IO ()
@@ -172,13 +171,10 @@ emptyAM :: AppMiddleware cxt cxt
 emptyAM = C.id
 
 -- | Simple Application context
-type Simple' = '[LogFuncHolder]
-
--- | Simple Application context
-type Simple = SourcePack : Simple'
+type Simple = '[LogFuncHolder]
 
 -- | Simple Application with logger context.
-type AppSimple = AppV Simple' IO
+type AppSimple = AppV Simple IO
 
 
 -- $use

@@ -42,6 +42,9 @@ dependencies:
   - swagger2
   - vector
   - menshen
+  - exceptions
+  - transformers
+  - aeson
 
 library:
   source-dirs: src
@@ -63,6 +66,7 @@ library:
     
     - Yam.Server
     - Yam.Server.Refresh
+    - Yam.Server.Health
     
     - Data.Opentracing
     - Data.Opentracing.Types

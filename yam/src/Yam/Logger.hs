@@ -9,7 +9,7 @@ module Yam.Logger(
   , LogFuncHolder(..)
   , VaultHolder(..)
   ) where
-
+import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import qualified Data.Vault.Lazy                as L
 import           Data.Word
@@ -70,8 +70,10 @@ newLogger name lc = do
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
-withLogger :: Text -> IO LogConfig -> (LogFunc -> LoggingT IO a) -> IO a
-withLogger n lc action = bracket (newLogger n lc) snd $ \(f,_) -> runLoggingT (askLoggerIO >>= action) f
+withLogger :: (MonadUnliftIO m) => Text -> IO LogConfig -> (LogFunc -> LoggingT m a) -> m a
+withLogger n lc action = do
+  f <- askRunInIO
+  liftIO $ bracket (newLogger n lc) (snd) $ f . runLoggingT (askLoggerIO >>= action) . fst
 
 addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)

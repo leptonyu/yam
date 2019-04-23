@@ -1,6 +1,6 @@
 module Yam.Server.Refresh where
 
-import           Data.Text   (Text)
+import           Data.Text   (Text, pack)
 import           Salak
 import           Servant
 import           Yam.App
@@ -13,6 +13,9 @@ refreshEndpoint :: (HasLogger cxt, MonadIO m) => IO ReloadResult -> Bool -> AppT
 refreshEndpoint io True = do
   ReloadResult{..} <- liftIO $ io
   if isError
-    then throwS err400 $ showText msg
-    else return $ showText msg
+    then throwS err400 $ showMsg msg
+    else return $ showMsg msg
 refreshEndpoint _ _     = throwS err401 "Refresh not allowed"
+
+showMsg :: [String] -> Text
+showMsg = pack . unlines

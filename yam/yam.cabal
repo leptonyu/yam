@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a594130dcd0435e18e02e8dd659c8f8d1d465d6b20eba166ccb596083f91c815
+-- hash: 85ad0227eaed49f9aa1d2e6fa681fc9ba08914454ae499f53a417c5bf28131a6
 
 name:           yam
 version:        0.6.1
@@ -37,6 +37,7 @@ library
       Yam.Middleware.Error
       Yam.Server
       Yam.Server.Refresh
+      Yam.Server.Health
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer
@@ -52,6 +53,7 @@ library
     , binary
     , bytestring
     , data-default
+    , exceptions
     , fast-logger
     , http-client
     , http-types
@@ -69,6 +71,7 @@ library
     , servant-swagger-ui
     , swagger2
     , text
+    , transformers
     , unliftio-core
     , unordered-containers
     , vault
@@ -95,6 +98,7 @@ test-suite spec
       Yam.Middleware.Trace
       Yam.Prelude
       Yam.Server
+      Yam.Server.Health
       Yam.Server.Refresh
       Yam.Swagger
       Paths_yam
@@ -111,6 +115,7 @@ test-suite spec
     , binary
     , bytestring
     , data-default
+    , exceptions
     , fast-logger
     , hspec ==2.*
     , http-client
@@ -129,6 +134,7 @@ test-suite spec
     , servant-swagger-ui
     , swagger2
     , text
+    , transformers
     , unliftio-core
     , unordered-containers
     , vault
