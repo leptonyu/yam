@@ -52,10 +52,10 @@ runClient _ url cma = do
 hoistC :: forall cxt api. (HasHttpClient cxt, HasClient ClientM api) => Proxy cxt -> Proxy api -> BaseUrl -> Client (AppT cxt IO) api
 hoistC pc p url = hoistClient p (runClient pc url) (client p)
 
-clientMiddleware :: RunSalakT IO (AppMiddleware cxt (HttpClient : cxt))
+clientMiddleware :: RunSalak (AppMiddleware cxt (HttpClient : cxt))
 clientMiddleware = clientMiddleware' id
 
-clientMiddleware' :: (ManagerSettings -> ManagerSettings) -> RunSalakT IO (AppMiddleware cxt (HttpClient : cxt))
+clientMiddleware' :: (ManagerSettings -> ManagerSettings) -> RunSalak (AppMiddleware cxt (HttpClient : cxt))
 clientMiddleware' f = do
   ms <- require "client" >>= liftIO . newManager . f
   return $ simpleContext $ HttpClient ms

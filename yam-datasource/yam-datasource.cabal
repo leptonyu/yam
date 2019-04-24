@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 57dcd3ed503bf04c5f1ad12d10e13bf558155564c886f68be25b062ad16e200c
+-- hash: 3eda7fcc8cf000fb100c7afe3b5af20812913cfe649b4ccfc6703b7d7808aa0d
 
 name:           yam-datasource
 version:        0.6.1
@@ -37,7 +37,7 @@ library
     , persistent >=2.8.0 && <2.11
     , resource-pool
     , resourcet
-    , salak
+    , salak >=0.2.9.3
     , servant-server
     , text
     , unliftio-core

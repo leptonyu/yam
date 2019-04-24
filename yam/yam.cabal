@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 85ad0227eaed49f9aa1d2e6fa681fc9ba08914454ae499f53a417c5bf28131a6
+-- hash: 09fa477badb20e02f4c6ddaa11071f1ecdb0ee1546e3ac42999c25a91d93228d
 
 name:           yam
 version:        0.6.1
@@ -63,7 +63,7 @@ library
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.2.9 && <0.3
+    , salak >=0.2.9.3 && <0.3
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
@@ -126,7 +126,7 @@ test-suite spec
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.2.9 && <0.3
+    , salak >=0.2.9.3 && <0.3
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17

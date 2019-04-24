@@ -14,7 +14,7 @@ extra-source-files:
 dependencies:
   - base >= 4.10 && < 5
   - yam
-  - salak
+  - salak >= 0.2.9.3
   - text
   - mtl
   - data-default

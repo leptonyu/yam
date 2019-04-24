@@ -7,7 +7,6 @@ import           Data.Swagger
 import           GHC.Generics
 import           Servant
 import           Yam.App
-import           Yam.Logger
 import           Yam.Prelude
 
 type HealthEndpoint = "health" :> Get '[JSON] HealthResult
@@ -32,6 +31,6 @@ mergeHealth ios na ior = do
   HealthResult{..} <- ior
   return (HealthResult (if s == DOWN then s else status) Nothing $ M.insert na (HealthResult s err M.empty) details)
 
-healthEndpoint :: (HasLogger cxt, MonadIO m) => IO HealthResult -> Bool -> AppT cxt m HealthResult
+healthEndpoint :: MonadIO m => IO HealthResult -> Bool -> AppT cxt m HealthResult
 healthEndpoint a True = liftIO a
 healthEndpoint a _    = liftIO a

@@ -22,7 +22,7 @@ dependencies:
   - monad-logger
   - text
   - servant-server
-  - salak
+  - salak >= 0.2.9.3
   - data-default
 
 library:
