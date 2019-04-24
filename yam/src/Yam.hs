@@ -57,6 +57,7 @@ module Yam(
   , SwaggerConfig(..)
   , serveWithContextAndSwagger
   , baseInfo
+  , SwaggerTag
   -- * Reexport
   , spanNoNotifier
   , Span(..)

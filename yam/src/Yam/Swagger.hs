@@ -3,14 +3,17 @@ module Yam.Swagger(
     SwaggerConfig(..)
   , serveWithContextAndSwagger
   , baseInfo
+  , SwaggerTag
   ) where
 
 import           Control.Lens       hiding (Context)
 import           Data.Reflection
 import           Data.Swagger
 import           Data.Version       (showVersion)
+import           GHC.TypeLits
 import           Salak
 import           Servant
+import           Servant.Client
 import           Servant.Swagger
 import           Servant.Swagger.UI
 import           Yam.Prelude
@@ -59,5 +62,27 @@ baseInfo hostName n v p s = s
   & info . version .~ pack (showVersion v)
   & host ?~ Host hostName (Just $ fromIntegral p)
 
+data SwaggerTag (name :: Symbol) (desp :: Symbol)
 
+instance HasServer api ctx
+  => HasServer (SwaggerTag name desp :> api) ctx where
+  type ServerT (SwaggerTag name desp :> api) m = ServerT api m
+  route _ = route (Proxy @api)
+  hoistServerWithContext _ = hoistServerWithContext (Proxy @api)
+
+instance HasClient m api
+  => HasClient m (SwaggerTag name desp :> api) where
+  type  Client m (SwaggerTag name desp :> api) = Client m api
+  clientWithRoute _ _ = clientWithRoute (Proxy @m) (Proxy @api)
+  hoistClientMonad pm _ = hoistClientMonad pm (Proxy @api)
+
+instance (HasSwagger api, KnownSymbol name, KnownSymbol desp)
+  => HasSwagger (SwaggerTag name desp :> api) where
+  toSwagger _ = toSwagger (Proxy @api) & applyTags [tag]
+    where
+      tag = Tag (go (Proxy @name)) (g2 $ go (Proxy @desp)) Nothing
+      go :: forall a. KnownSymbol a => Proxy a -> Text
+      go  = pack . symbolVal
+      g2 "" = Nothing
+      g2 a  = Just a
 

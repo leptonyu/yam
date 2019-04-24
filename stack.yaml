@@ -3,7 +3,7 @@ packages:
 - yam
 - yam-datasource
 - yam-redis
-- example
+# - example
 extra-deps:
 - persistent-2.10.0
 

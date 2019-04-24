@@ -10,6 +10,7 @@ import           Yam.Logger
 import           Yam.Prelude
 import           Yam.Server.Health
 import           Yam.Server.Refresh
+import           Yam.Swagger
 
 data ActuatorConfig = ActuatorConfig
   { enabled :: Bool
@@ -23,7 +24,7 @@ instance FromProp ActuatorConfig where
     <*> "refresh.enabled" .?= True
     <*> "health.enabled"  .?= True
 
-type ActuatorEndpoint = "actuator" :>
+type ActuatorEndpoint = SwaggerTag "actuator" "Actuator API" :> "actuator" :>
   (    RefreshEndpoint
   :<|> HealthEndpoint
   )
