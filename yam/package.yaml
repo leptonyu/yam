@@ -1,5 +1,5 @@
 name:                yam
-version:             0.6.1
+version:             0.6.2
 synopsis:            A wrapper of servant
 description:         A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 homepage:            https://github.com/leptonyu/yam#readme
@@ -39,7 +39,7 @@ dependencies:
   - http-client
   - servant-swagger
   - servant-swagger-ui
-  - swagger2
+  - swagger2 < 2.5
   - vector
   - menshen
   - exceptions

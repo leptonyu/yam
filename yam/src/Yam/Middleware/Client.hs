@@ -37,7 +37,7 @@ instance FromProp ManagerSettings where
       , managerIdleConnectionCount = idleCount
       }
 
-data HttpClient = HttpClient Manager
+newtype HttpClient = HttpClient Manager
 
 type HasHttpClient cxt = (HasLogger cxt, HasContextEntry cxt HttpClient)
 

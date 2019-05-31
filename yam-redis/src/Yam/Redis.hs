@@ -68,7 +68,7 @@ multiE :: RedisTx (Queued a) -> Redis (Either Reply a)
 multiE a = go <$> multiExec a
   where
     go (TxSuccess o) = Right o
-    go (TxAborted  ) = Left $ Error "RedisTx aborted"
+    go  TxAborted    = Left $ Error "RedisTx aborted"
     go (TxError   e) = Left $ Error $ BC.pack e
 
 redisMiddleware :: RunSalak (AppMiddleware a (REDIS : a))

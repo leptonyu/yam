@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 09fa477badb20e02f4c6ddaa11071f1ecdb0ee1546e3ac42999c25a91d93228d
+-- hash: 9026df11b24a613ab4cbf6b9f0a2493b5ba2b479d7869d43f5b9aa3882aa4de6
 
 name:           yam
-version:        0.6.1
+version:        0.6.2
 synopsis:       A wrapper of servant
 description:    A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 category:       Web
@@ -69,7 +69,7 @@ library
     , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui
-    , swagger2
+    , swagger2 <2.5
     , text
     , transformers
     , unliftio-core
@@ -132,7 +132,7 @@ test-suite spec
     , servant-server >=0.16 && <0.17
     , servant-swagger
     , servant-swagger-ui
-    , swagger2
+    , swagger2 <2.5
     , text
     , transformers
     , unliftio-core

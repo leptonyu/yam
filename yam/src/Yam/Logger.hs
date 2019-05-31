@@ -73,7 +73,7 @@ newLogger name lc = do
 withLogger :: (MonadUnliftIO m) => Text -> IO LogConfig -> (LogFunc -> LoggingT m a) -> m a
 withLogger n lc action = do
   f <- askRunInIO
-  liftIO $ bracket (newLogger n lc) (snd) $ f . runLoggingT (askLoggerIO >>= action) . fst
+  liftIO $ bracket (newLogger n lc) snd $ f . runLoggingT (askLoggerIO >>= action) . fst
 
 addTrace :: LogFunc -> Text -> LogFunc
 addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)

@@ -134,7 +134,7 @@ start' load ver mkAMD pSer mkSer = loadAndRunSalak load $ do
   sw@SwaggerConfig{..} <- require  "swagger"
   withLogger name c $ \logger -> unSalak $ do
     let portText = showText port
-        baseCxt = (LF logger :. EmptyContext)
+        baseCxt  = LF logger :. EmptyContext
     logInfo $ "Start Service [" <> name <> "] ..."
     amd <- mkAMD
     ser <- mkSer

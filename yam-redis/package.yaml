@@ -1,5 +1,5 @@
 name:                yam-redis
-version:             0.6.1
+version:             0.6.2
 synopsis:            Yam Redis Middleware
 #description:
 homepage:            https://github.com/leptonyu/yam#readme

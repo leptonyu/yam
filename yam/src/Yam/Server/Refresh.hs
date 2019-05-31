@@ -11,7 +11,7 @@ type RefreshEndpoint = "refresh" :> Post '[PlainText] Text
 
 refreshEndpoint :: (HasLogger cxt, MonadIO m) => IO ReloadResult -> Bool -> AppT cxt m Text
 refreshEndpoint io True = do
-  ReloadResult{..} <- liftIO $ io
+  ReloadResult{..} <- liftIO io
   if isError
     then throwS err400 $ showMsg msg
     else return $ showMsg msg

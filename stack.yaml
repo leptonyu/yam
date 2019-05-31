@@ -1,4 +1,4 @@
-resolver: nightly-2019-04-24
+resolver: nightly-2019-05-31
 packages:
 - yam
 - yam-datasource
@@ -6,6 +6,7 @@ packages:
 # - example
 extra-deps:
 - persistent-2.10.0
+- swagger2-2.4
 
 pvp-bounds: both
 nix:

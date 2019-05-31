@@ -118,7 +118,7 @@ randomString = L.toStrict . B16.encode . B.encode <$> (uniform randomGen :: IO W
 showText :: Show a => a -> Text
 showText = pack . show
 
-data WebErrResult = WebErrResult
+newtype WebErrResult = WebErrResult
   { message :: Text
   }
 
