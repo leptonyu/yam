@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 81a384653f19f587fcc19da5c69a2b0984af62e451ba2634b6e8fed07cd4329c
+-- hash: 5727c3cff358980e2d850ee756d799232139b3a6f835b5653e3ed69f6ad085c9
 
 name:           yam-redis
-version:        0.6.2
+version:        0.6.3
 synopsis:       Yam Redis Middleware
 category:       Web
 homepage:       https://github.com/leptonyu/yam#readme
