@@ -9,13 +9,14 @@ import           Yam.Prelude
 
 type RefreshEndpoint = "refresh" :> Post '[PlainText] Text
 
-refreshEndpoint :: (HasLogger cxt, MonadIO m) => IO ReloadResult -> Bool -> AppT cxt m Text
-refreshEndpoint io True = do
+refreshEndpoint :: (HasSalaks cxt, HasLogger cxt, MonadIO m) => Bool -> AppT cxt m Text
+refreshEndpoint True = do
+  io <- askReload
   ReloadResult{..} <- liftIO io
-  if isError
-    then throwS err400 $ showMsg msg
-    else return $ showMsg msg
-refreshEndpoint _ _     = throwS err401 "Refresh not allowed"
+  if hasError
+    then throwS err400 $ showMsg msgs
+    else return $ showMsg msgs
+refreshEndpoint _     = throwS err401 "Refresh not allowed"
 
 showMsg :: [String] -> Text
 showMsg = pack . unlines

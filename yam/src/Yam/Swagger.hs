@@ -25,7 +25,7 @@ data SwaggerConfig = SwaggerConfig
   , enabled   :: Bool   -- ^ If enable swagger.
   } deriving (Eq, Show)
 
-instance FromProp SwaggerConfig where
+instance MonadCatch m => FromProp m SwaggerConfig where
   fromProp = SwaggerConfig
     <$> "dir"     .?= "swagger-ui"
     <*> "schema"  .?= "swagger-ui.json"

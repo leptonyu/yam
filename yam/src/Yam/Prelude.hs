@@ -41,9 +41,7 @@ module Yam.Prelude(
   , fromJust
   , Version
   , Middleware
-  , RunSalak(..)
-  , liftSalak
-  , liftX
+  , RunSalak
   ) where
 
 import           Control.Exception                   hiding (Handler)
@@ -72,36 +70,6 @@ import           Servant
 import           Servant.Server.Internal.ServerError
 import           System.IO.Unsafe                    (unsafePerformIO)
 import           System.Random.MWC
-
-newtype RunSalak a = RunSalak { unSalak :: LoggingT (RunSalakT IO) a } deriving (Functor, Applicative, Monad)
-
-instance HasSourcePack RunSalak where
-  askSourcePack = liftSalak askSourcePack
-  logSP         = liftSalak . logSP
-  readLogs      = liftSalak readLogs
-
-instance MonadIO RunSalak where
-  liftIO = RunSalak . liftIO
-
-instance MonadLogger RunSalak where
-  monadLoggerLog a b c d = RunSalak (monadLoggerLog a b c d)
-
-instance MonadLoggerIO RunSalak where
-  askLoggerIO = RunSalak askLoggerIO
-
-instance MonadUnliftIO RunSalak where
-  askUnliftIO = RunSalak $ do
-    f  <- lift askUnliftIO
-    lf <- askLoggerIO
-    return $ UnliftIO $ \ma -> unliftIO f (runLoggingT (unSalak ma) lf)
-
-liftSalak :: RunSalakT IO a -> RunSalak a
-liftSalak = RunSalak . lift
-
-liftX :: LoggingT IO a -> RunSalak a
-liftX f = do
-  lf <- askLoggerIO
-  liftIO $ runLoggingT f lf
 
 type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 

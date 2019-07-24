@@ -23,10 +23,10 @@ import           Yam.Prelude
 instance Default ManagerSettings where
   def = defaultManagerSettings
 
-instance FromProp ResponseTimeout where
+instance MonadThrow m => FromProp m ResponseTimeout where
   fromProp = responseTimeoutMicro <$> fromProp
 
-instance FromProp ManagerSettings where
+instance MonadCatch m => FromProp m ManagerSettings where
   fromProp = do
     connCount <- "max-conns"  .?: managerConnCount
     timeout   <- "timeout"    .?: managerResponseTimeout
@@ -52,10 +52,8 @@ runClient _ url cma = do
 hoistC :: forall cxt api. (HasHttpClient cxt, HasClient ClientM api) => Proxy cxt -> Proxy api -> BaseUrl -> Client (AppT cxt IO) api
 hoistC pc p url = hoistClient p (runClient pc url) (client p)
 
-clientMiddleware :: RunSalak (AppMiddleware cxt (HttpClient : cxt))
+clientMiddleware :: HasSalaks cxt => AppMiddleware cxt (HttpClient : cxt)
 clientMiddleware = clientMiddleware' id
 
-clientMiddleware' :: (ManagerSettings -> ManagerSettings) -> RunSalak (AppMiddleware cxt (HttpClient : cxt))
-clientMiddleware' f = do
-  ms <- require "client" >>= liftIO . newManager . f
-  return $ simpleContext $ HttpClient ms
+clientMiddleware' :: HasSalaks cxt => (ManagerSettings -> ManagerSettings) -> AppMiddleware cxt (HttpClient : cxt)
+clientMiddleware' f = simpleConfig' "client" $ \a -> HttpClient <$> (liftIO $ newManager $ f a)

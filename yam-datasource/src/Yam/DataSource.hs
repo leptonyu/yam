@@ -47,7 +47,7 @@ data DataSourceConfig = DataSourceConfig
 instance Default DataSourceConfig where
   def = DataSourceConfig "sqlite" ":memory:" 10
 
-instance FromProp DataSourceConfig where
+instance MonadCatch m => FromProp m DataSourceConfig where
   fromProp = DataSourceConfig
     <$> "type"            .?: dsType
     <*> "url"             .?: dsUrl

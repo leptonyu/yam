@@ -4,6 +4,7 @@ module Yam.Logger(
     withLogger
   , getLogger
   , extensionLogKey
+  , liftX
   , LogConfig(..)
   , HasLogger
   , LogFuncHolder(..)
@@ -11,6 +12,7 @@ module Yam.Logger(
   ) where
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
+import           Data.Text                      (unpack)
 import qualified Data.Vault.Lazy                as L
 import           Data.Word
 import           Salak
@@ -18,12 +20,14 @@ import           System.IO.Unsafe               (unsafePerformIO)
 import           System.Log.FastLogger
 import           Yam.Prelude
 
-instance FromEnumProp LogLevel where
-  fromEnumProp "debug" = Right   LevelDebug
-  fromEnumProp "info"  = Right   LevelInfo
-  fromEnumProp "warn"  = Right   LevelWarn
-  fromEnumProp "error" = Right   LevelError
-  fromEnumProp _       = Right $ LevelOther "fatal"
+instance MonadThrow m => FromProp m LogLevel where
+  fromProp = readEnum fromEnumProp
+    where
+      fromEnumProp "debug" = Right   LevelDebug
+      fromEnumProp "info"  = Right   LevelInfo
+      fromEnumProp "warn"  = Right   LevelWarn
+      fromEnumProp "error" = Right   LevelError
+      fromEnumProp u       = Left $ "unknown level: " ++ unpack u
 
 {-# INLINE toStr #-}
 toStr :: LogLevel -> LogStr
@@ -39,13 +43,12 @@ data LogConfig = LogConfig
   , file          :: FilePath -- ^ Logger file path.
   , maxSize       :: Word32   -- ^ Max logger file size.
   , rotateHistory :: Word16   -- ^ Max number of logger files should be reserved.
-  , level         :: LogLevel -- ^ Log level to show.
-  } deriving (Eq, Show)
-
+  , level         :: IO LogLevel -- ^ Log level to show.
+  }
 instance Default LogConfig where
-  def = LogConfig 4096 "" 10485760 256 LevelInfo
+  def = LogConfig 4096 "" 10485760 256 (return LevelInfo)
 
-instance FromProp LogConfig where
+instance (MonadIO m, MonadCatch m) => FromProp m LogConfig where
   fromProp = LogConfig
     <$> "buffer-size" .?: bufferSize
     <*> "file"        .?: file
@@ -53,9 +56,8 @@ instance FromProp LogConfig where
     <*> "max-history" .?: rotateHistory
     <*> "level"       .?: level
 
-newLogger :: Text -> IO LogConfig -> IO (LogFunc, IO ())
-newLogger name lc = do
-  LogConfig{..} <- lc
+newLogger :: Text -> LogConfig -> IO (LogFunc, IO ())
+newLogger name LogConfig{..} = do
   tc            <- newTimeCache "%Y-%m-%d %T"
   let ft = if file == ""
             then LogStdout $ fromIntegral bufferSize
@@ -65,12 +67,16 @@ newLogger name lc = do
   return (toLogger ln l, close)
   where
     toLogger xn f Loc{..} _ ll s = do
-      c <- lc
-      when (level c <= ll) $ f $ \t ->
+      lc <- level
+      when (lc <= ll) $ f $ \t ->
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
-withLogger :: (MonadUnliftIO m) => Text -> IO LogConfig -> (LogFunc -> LoggingT m a) -> m a
+
+liftX :: MonadIO m => LoggingT IO () -> LoggingT m ()
+liftX f = askLoggerIO >>= liftIO . runLoggingT f
+
+withLogger :: (MonadUnliftIO m) => Text -> LogConfig -> (LogFunc -> LoggingT m a) -> m a
 withLogger n lc action = do
   f <- askRunInIO
   liftIO $ bracket (newLogger n lc) snd $ f . runLoggingT (askLoggerIO >>= action) . fst

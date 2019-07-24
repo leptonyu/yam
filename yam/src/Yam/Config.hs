@@ -18,7 +18,7 @@ data AppConfig = AppConfig
 instance Default AppConfig where
   def = AppConfig "application" "localhost" 8888 2048
 
-instance FromProp AppConfig where
+instance MonadCatch m => FromProp m AppConfig where
   fromProp = AppConfig
     <$> "name"           .?: name
     <*> "host"           .?: hostname

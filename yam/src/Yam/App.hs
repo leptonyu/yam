@@ -1,6 +1,8 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE AllowAmbiguousTypes  #-}
+{-# LANGUAGE UndecidableInstances #-}
 module Yam.App where
 
+import           Control.Monad.Catch            hiding (Handler)
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
@@ -8,7 +10,7 @@ import           Data.Menshen
 import           Salak
 import           Servant
 import           Yam.Logger
-import           Yam.Prelude
+import           Yam.Prelude                    hiding (catch)
 
 -- | Application Context Monad.
 newtype AppT cxt m a = AppT { runAppT' :: ReaderT (Context cxt) m a } deriving (Functor, Applicative, Monad)
@@ -22,6 +24,9 @@ type AppV cxt = AppT (VaultHolder : cxt)
 -- | Application with 'SourcePack'
 type AppS cxt = AppV (SourcePack : cxt)
 
+instance MonadThrow m => MonadThrow (AppT cxt m) where
+  throwM = AppT . lift . throwM
+
 instance MonadTrans (AppT cxt) where
   lift = AppT . lift
 
@@ -31,6 +36,11 @@ instance MonadIO m => MonadIO (AppT cxt m) where
 instance Monad m => MonadReader (Context cxt) (AppT cxt m) where
   ask = AppT ask
   local f (AppT a) = AppT $ local f a
+
+instance MonadCatch m => MonadCatch (AppT cxt m) where
+  catch (AppT m) f = do
+    c <- ask
+    lift $ runReaderT m c `catch` (\e -> runReaderT (runAppT' $ f e) c)
 
 instance MonadUnliftIO m => MonadUnliftIO (AppT cxt m) where
   askUnliftIO = do
@@ -65,10 +75,10 @@ tryEntry = asks tryContextEntry
 runAppT :: Context cxt -> AppT cxt m a -> m a
 runAppT c a = runReaderT (runAppT' a) c
 
-instance (HasContextEntry cxt SourcePack, Monad m) => HasSourcePack (AppT cxt m) where
-  askSourcePack = getEntry
+instance (HasContextEntry cxt SourcePack, Monad m) => MonadSalak (AppT cxt m) where
+  askSalak = getEntry
 
-type HasSalak cxt = HasContextEntry cxt SourcePack
+type HasSalaks cxt = HasContextEntry cxt SourcePack
 
 -- | Run Application with 'Vault'.
 runVault :: MonadIO m => Context cxt -> Vault -> AppV cxt IO a -> m a

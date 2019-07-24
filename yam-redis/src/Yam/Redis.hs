@@ -33,7 +33,7 @@ import           Yam
 instance Default ConnectInfo where
   def = defaultConnectInfo
 
-instance FromProp ConnectInfo where
+instance MonadCatch m => FromProp m ConnectInfo where
   fromProp = ConnInfo
     <$> "host"      .?: connectHost
     <*> "port"      .?: connectPort
@@ -44,8 +44,8 @@ instance FromProp ConnectInfo where
     <*> return Nothing
     <*> return Nothing
 
-instance FromProp PortID where
-  fromProp = PortNumber . fromIntegral <$> (fromProp :: Prop Word16)
+instance MonadThrow m => FromProp m PortID where
+  fromProp = PortNumber . fromIntegral <$> (fromProp :: Prop m Word16)
 
 -- | Middleware context type.
 newtype REDIS = REDIS Connection
@@ -71,11 +71,10 @@ multiE a = go <$> multiExec a
     go  TxAborted    = Left $ Error "RedisTx aborted"
     go (TxError   e) = Left $ Error $ BC.pack e
 
-redisMiddleware :: RunSalak (AppMiddleware a (REDIS : a))
-redisMiddleware = do
-  ci <- require "redis"
-  return $ AppMiddleware $ \cxt m h f -> do
+redisMiddleware :: HasSalaks a => AppMiddleware a (REDIS : a)
+redisMiddleware = AppMiddleware $ \cxt m h f -> do
     logInfo "Redis loaded"
+    ci <- runAppT cxt (require "redis")
     lf <- askLoggerIO
     liftIO
       $ bracket (connect ci) disconnect

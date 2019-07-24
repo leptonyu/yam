@@ -1,19 +1,19 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5727c3cff358980e2d850ee756d799232139b3a6f835b5653e3ed69f6ad085c9
+-- hash: 5bfbaf708e3f2a1e19130f40fed52bd0962e20ac4c5aad03b26efc6d1eacde39
 
 name:           yam-redis
-version:        0.6.3
+version:        0.7
 synopsis:       Yam Redis Middleware
 category:       Web
 homepage:       https://github.com/leptonyu/yam#readme
 author:         Daniel YU
 maintainer:     Daniel YU <leptonyu@gmail.com>
-copyright:      (c) Daniel YU
+copyright:      (c) 2018 Daniel YU
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -28,7 +28,7 @@ library
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
     , bytestring
@@ -37,7 +37,7 @@ library
     , menshen
     , monad-logger
     , mtl
-    , salak >=0.2.9.3
+    , salak >=0.3
     , servant-server
     , text
     , yam

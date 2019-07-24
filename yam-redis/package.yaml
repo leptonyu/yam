@@ -1,20 +1,14 @@
+_common: !include "../common.yaml"
+<<: *legal
 name:                yam-redis
-version:             0.6.3
 synopsis:            Yam Redis Middleware
-#description:
-homepage:            https://github.com/leptonyu/yam#readme
-license:             BSD3
-author:              Daniel YU
-maintainer:          Daniel YU <leptonyu@gmail.com>
-copyright:           (c) Daniel YU
-category:            Web
 extra-source-files:
 - README.md
 
 dependencies:
   - base >= 4.10 && < 5
   - yam
-  - salak >= 0.2.9.3
+  - salak >= 0.3
   - text
   - mtl
   - data-default
@@ -28,6 +22,3 @@ library:
   source-dirs: src
   exposed-modules:
     - Yam.Redis
-
-defaults:
-  local: ../defaults.yaml

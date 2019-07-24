@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 58ff03e12959848bbcde0ebbddc37feccb713125496d0f4e22aa4697e7b8ab98
+-- hash: 5637a758c838a255a1971692ca1865c5ea258c076112899b692745f44c531e4d
 
 name:           yam
-version:        0.6.3
+version:        0.7
 synopsis:       A wrapper of servant
 description:    A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 category:       Web
@@ -45,7 +45,7 @@ library
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
     , base >=4.10 && <5
@@ -63,7 +63,7 @@ library
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.2.9.3 && <0.3
+    , salak >=0.3 && <0.4
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
@@ -77,7 +77,7 @@ library
     , vault
     , vector
     , wai
-    , warp
+    , warp >=3.2.27 && <3.4
   default-language: Haskell2010
 
 test-suite spec
@@ -106,7 +106,7 @@ test-suite spec
       test
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck <2.14
     , aeson
@@ -126,7 +126,7 @@ test-suite spec
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.2.9.3 && <0.3
+    , salak >=0.3 && <0.4
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
@@ -140,5 +140,5 @@ test-suite spec
     , vault
     , vector
     , wai
-    , warp
+    , warp >=3.2.27 && <3.4
   default-language: Haskell2010

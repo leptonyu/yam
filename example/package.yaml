@@ -1,13 +1,7 @@
+_common: !include "../common.yaml"
+<<: *legal
 name:                example
 version:             0.1.0.0
-#synopsis:
-#description:
-homepage:            https://github.com/leptonyu/yam/example#readme
-license:             BSD3
-author:              Daniel YU
-maintainer:          Daniel YU <leptonyu@gmail.com>
-copyright:           (c) 2018 Daniel YU
-category:            Web
 extra-source-files:
 - README.md
 
@@ -31,6 +25,3 @@ executables:
       - yam-redis
       - text
       - vault
-
-defaults:
-  local: ../defaults.yaml

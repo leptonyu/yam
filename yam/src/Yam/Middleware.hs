@@ -1,3 +1,4 @@
+{-# LANGUAGE IncoherentInstances #-}
 module Yam.Middleware where
 
 import qualified Control.Category               as C
@@ -22,11 +23,11 @@ simpleContext :: a -> AppMiddleware cxt (a ': cxt)
 simpleContext a = AppMiddleware $ \c m h f -> f (a :. c) m h
 
 -- | Simple Application Middleware, just provide a config to context.
-simpleConfig' :: (HasSalak cxt, FromProp a) => Text -> (a -> AppT cxt (LoggingT IO) b) -> AppMiddleware cxt (b ': cxt)
+simpleConfig' :: (HasSalaks cxt, FromProp (AppT cxt (LoggingT IO)) a) => Text -> (a -> AppT cxt (LoggingT IO) b) -> AppMiddleware cxt (b ': cxt)
 simpleConfig' key g = AppMiddleware $ \c m h f -> runAppT c (require key) >>= \a -> runAppT c (g a) >>= \b -> f (b :. c) m h
 
 -- | Simple Application Middleware, just provide a config to context.
-simpleConfig :: (HasSalak cxt, FromProp a) => Text -> AppMiddleware cxt (a ': cxt)
+simpleConfig :: (HasSalaks cxt, FromProp (AppT cxt (LoggingT IO)) a) => Text -> AppMiddleware cxt (a ': cxt)
 simpleConfig key = simpleConfig' key return
 
 -- | Simple Application Middleware, promote a 'Middleware' to 'AppMiddleware'

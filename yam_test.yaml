@@ -3,4 +3,6 @@ application:
 actuator:
   enabled: true
 
+# logging.level: error
+
 xxx.xxx: xxx

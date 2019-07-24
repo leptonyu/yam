@@ -1,13 +1,8 @@
+_common: !include "../common.yaml"
+<<: *legal
 name:                yam-datasource
-version:             0.6.3
 synopsis:            Yam DataSource Middleware
-#description:
-homepage:            https://github.com/leptonyu/yam#readme
-license:             BSD3
-author:              Daniel YU
-maintainer:          Daniel YU <leptonyu@gmail.com>
-copyright:           (c) Daniel YU
-category:            Web
+
 extra-source-files:
 - README.md
 
@@ -22,13 +17,10 @@ dependencies:
   - monad-logger
   - text
   - servant-server
-  - salak >= 0.2.9.3
+  - salak >= 0.3
   - data-default
 
 library:
   source-dirs: src
   exposed-modules:
     - Yam.DataSource
-
-defaults:
-  local: ../defaults.yaml

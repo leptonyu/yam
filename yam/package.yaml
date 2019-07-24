@@ -1,20 +1,16 @@
+_common: !include "../common.yaml"
+<<: *legal
 name:                yam
-version:             0.6.3
 synopsis:            A wrapper of servant
 description:         A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
-homepage:            https://github.com/leptonyu/yam#readme
-license:             BSD3
-author:              Daniel YU
-maintainer:          Daniel YU <leptonyu@gmail.com>
-copyright:           (c) 2018 Daniel YU
-category:            Web
+
 extra-source-files:
 - README.md
 - yam_test.yml
 
 dependencies:
   - base >= 4.10 && < 5
-  - salak >= 0.2.9.3 && < 0.3
+  - salak >= 0.3 && < 0.4
   - aeson
   - text
   - bytestring
@@ -32,7 +28,7 @@ dependencies:
   - monad-logger
   - fast-logger
   - wai
-  - warp
+  - warp >=3.2.27 && < 3.4
   - http-types
   - servant-server >= 0.16 && < 0.17
   - servant-client >= 0.16 && < 0.17
@@ -83,6 +79,3 @@ tests:
       - hspec == 2.*
       - QuickCheck < 2.14
       - text
-
-defaults:
-  local: ../defaults.yaml

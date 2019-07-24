@@ -27,4 +27,4 @@ servantService :: App T.Text
 servantService = throwS err401 "Servant"
 
 main :: IO ()
-main = start "yam_test" YAML version redisMiddleware (Proxy @UserApi) (return service)
+main = start "yam_test" YAML version redisMiddleware (Proxy @UserApi) service

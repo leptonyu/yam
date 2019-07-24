@@ -33,10 +33,10 @@ data TraceNotifyType
   = NoTracer
   deriving (Eq, Show)
 
-instance FromEnumProp TraceNotifyType where
-  fromEnumProp _ = Right NoTracer
+instance MonadCatch m => FromProp m TraceNotifyType where
+  fromProp = readEnum $ \_ -> Right NoTracer
 
-instance FromProp TraceConfig where
+instance MonadCatch m => FromProp m TraceConfig where
   fromProp = TraceConfig
     <$> "enabled" .?: enabled
     <*> "type"    .?: method

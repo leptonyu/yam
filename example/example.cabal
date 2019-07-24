@@ -1,15 +1,15 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.31.1.
+-- This file has been generated from package.yaml by hpack version 0.31.2.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 7f2e5500bbc2f91f203b1b5cd5b694703810cb1e1451cef6e96007ba45891cbf
+-- hash: c0157828b1b930457e69e394ab4b11c20993cc1ac23f40e0b692abf0789d5ca6
 
 name:           example
 version:        0.1.0.0
 category:       Web
-homepage:       https://github.com/leptonyu/yam/example#readme
+homepage:       https://github.com/leptonyu/yam#readme
 author:         Daniel YU
 maintainer:     Daniel YU <leptonyu@gmail.com>
 copyright:      (c) 2018 Daniel YU
@@ -26,7 +26,7 @@ executable yam
   hs-source-dirs:
       src
   default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
-  ghc-options: -Wall
+  ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       base >=4.10 && <5
     , monad-logger

@@ -1,5 +1,6 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE NoPolyKinds         #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NoPolyKinds           #-}
 -- |
 -- Module:      Yam
 -- Copyright:   (c) 2019 Daniel YU
@@ -53,6 +54,8 @@ module Yam(
   , TryContextEntry(..)
   , getEntry
   , tryEntry
+  -- ** Configuration
+  , HasSalaks
   -- ** Swagger
   , SwaggerConfig(..)
   , serveWithContextAndSwagger
@@ -77,7 +80,6 @@ module Yam(
   , logError
   , logWarn
   , logDebug
-  , RunSalak(..)
   ) where
 
 import qualified Control.Category               as C
@@ -105,47 +107,46 @@ start
   :: forall file api cxt
   . ( HasLoad file
     , HasLogger cxt
+    , HasSalaks cxt
     , HasServer api  cxt
     , HasSwagger api)
   => String -- ^ File config name
   -> file -- ^ Config file format
   -> Version -- ^ Version
-  -> RunSalak (AppMiddleware Simple cxt) -- ^ Application Middleware
+  -> AppMiddleware Simple cxt -- ^ Application Middleware
   -> Proxy api -- ^ Application API Proxy
-  -> RunSalak (ServerT api (AppV cxt IO)) -- ^ Application API Server
+  -> ServerT api (AppV cxt IO) -- ^ Application API Server
   -> IO ()
-start cfg file = start' (loadSalakFile cfg file)
+start cfg file = start' (loadSalakWith file cfg)
 
 -- | Standard Starter of Yam.
 start'
   :: forall api cxt
   .(HasLogger cxt
+  , HasSalaks cxt
   , HasServer api  cxt
   , HasSwagger api)
-  => LoadSalakT IO ()
+  => LoadSalak ()
   -> Version
-  -> RunSalak (AppMiddleware Simple cxt)
+  -> AppMiddleware Simple cxt
   -> Proxy api
-  -> RunSalak (ServerT api (AppV cxt IO))
+  -> ServerT api (AppV cxt IO)
   -> IO ()
-start' load ver mkAMD pSer mkSer = loadAndRunSalak load $ do
-  c                    <- requireD "logging"
-  app@AppConfig{..}    <- require  "application"
-  sw@SwaggerConfig{..} <- require  "swagger"
-  withLogger name c $ \logger -> unSalak $ do
+start' load ver amd pSer ser = loadAndRunSalak load $ do
+  app@AppConfig{..}    <- require "application"
+  c                    <- require "logging"
+  withLogger name c $ \logger -> do
+    sw <- require "swagger"
+    ac <- require "actuator"
+    sp <- askSalak
     let portText = showText port
-        baseCxt  = LF logger :. EmptyContext
+        baseCxt  = sp :. LF logger :. EmptyContext
     logInfo $ "Start Service [" <> name <> "] ..."
-    amd <- mkAMD
-    ser <- mkSer
-    f   <- askUnliftIO
-    liftX $ runAM amd baseCxt id emptyHealth $ \cxt middleware hr -> lift $ unliftIO f $ do
-      (en, aep) <- actuatorEndpoint hr
-      readLogs >>= mapM_ (logInfo . ("Parsing " <>))
-      when enabled $
-        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack urlDir
+    liftX $ runAM amd baseCxt id emptyHealth $ \cxt middleware hr -> do
+      when (enabled (sw :: SwaggerConfig)) $
+        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack (urlDir sw)
       logInfo      $ "Servant started on port(s): "       <> portText
-      let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> RunSalak ()
+      let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> LoggingT IO ()
           go x y = liftIO
             $ serveWarp app
             $ traceMiddleware (\v -> runAppT (VH v :. cxt) . spanNoNotifier)
@@ -153,8 +154,8 @@ start' load ver mkAMD pSer mkSer = loadAndRunSalak load $ do
             $ errorMiddleware baseCxt
             $ serveWithContextAndSwagger sw (baseInfo hostname name ver port) (Proxy @(Vault :> a)) cxt
             $ \v -> hoistServerWithContext x (Proxy @cxt) (nt cxt v) y
-      if en
-        then go (Proxy @(api :<|> ActuatorEndpoint)) (ser :<|> aep)
+      if enabled (ac :: ActuatorConfig)
+        then go (Proxy @(api :<|> ActuatorEndpoint)) (ser :<|> actuatorEndpoint hr ac)
         else go pSer ser
 
 -- | default http server by warp.
@@ -175,7 +176,7 @@ emptyAM :: AppMiddleware cxt cxt
 emptyAM = C.id
 
 -- | Simple Application context
-type Simple = '[LogFuncHolder]
+type Simple = '[SourcePack, LogFuncHolder]
 
 -- | Simple Application with logger context.
 type AppSimple = AppV Simple IO
