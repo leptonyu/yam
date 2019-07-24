@@ -18,51 +18,25 @@ module Yam(
 
   -- * Yam Server
     start
-  , start'
-  , serveWarp
   -- ** Application Configuration
   , AppConfig(..)
   -- ** Application Context
   , AppT
-  , AppV
-  , AppIO
-  , AppSimple
-  , Simple
   , runAppT
-  , runVault
   , throwS
   -- ** Application Middleware
   , AppMiddleware(..)
-  , emptyAM
-  , simpleContext
-  , simpleConfig
-  , simpleConfig'
-  , simpleMiddleware
-  -- *** Health
-  , HealthStatus(..)
-  , HealthResult(..)
-  , mergeHealth
   -- * Modules
   -- ** Logger
-  , LogConfig(..)
+  , HasBase
   , HasLogger
+  , HasSalak
+  , HasCxt
+  , askCxt
+  , LogConfig(..)
   , LogFuncHolder
   , VaultHolder
-  -- ** Context
-  , Context(..)
-  , HasContextEntry(..)
-  , TryContextEntry(..)
-  , getEntry
-  , tryEntry
-  -- ** Configuration
-  , HasSalaks
-  -- ** Swagger
-  , SwaggerConfig(..)
-  , serveWithContextAndSwagger
-  , baseInfo
-  , SwaggerTag
   -- * Reexport
-  , spanNoNotifier
   , Span(..)
   , SpanContext(..)
   , SpanTag(..)
@@ -75,14 +49,13 @@ module Yam(
   , pack
   , liftIO
   , fromMaybe
-  , throw
   , logInfo
   , logError
   , logWarn
   , logDebug
   ) where
 
-import qualified Control.Category               as C
+import           Control.Exception              (catch)
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Data.Opentracing
@@ -91,72 +64,51 @@ import           Network.Wai
 import           Salak
 import           Servant
 import           Servant.Swagger
-import           Yam.App
-import           Yam.Config
-import           Yam.Logger
+import           Yam.Internal
 import           Yam.Middleware
-import           Yam.Middleware.Error
+import           Yam.Middleware.Actuator
+import           Yam.Middleware.Swagger
 import           Yam.Middleware.Trace
-import           Yam.Prelude
-import           Yam.Server
-import           Yam.Server.Health
-import           Yam.Swagger
 
 -- | Standard Starter of Yam.
-start
-  :: forall file api cxt
-  . ( HasLoad file
-    , HasLogger cxt
-    , HasSalaks cxt
-    , HasServer api  cxt
-    , HasSwagger api)
-  => String -- ^ File config name
-  -> file -- ^ Config file format
-  -> Version -- ^ Version
-  -> AppMiddleware Simple cxt -- ^ Application Middleware
-  -> Proxy api -- ^ Application API Proxy
-  -> ServerT api (AppV cxt IO) -- ^ Application API Server
-  -> IO ()
-start cfg file = start' (loadSalakWith file cfg)
-
--- | Standard Starter of Yam.
-start'
-  :: forall api cxt
-  .(HasLogger cxt
-  , HasSalaks cxt
-  , HasServer api  cxt
+start :: forall m api cxt apicxt app.
+  ( m ~ LoggingT (RunSalakT IO)
+  , apicxt ~ '[BaseCxt, cxt]
+  , app ~ (AppT (Context apicxt) IO)
+  , Monad m
+  , HasServer  api apicxt
   , HasSwagger api)
   => LoadSalak ()
   -> Version
-  -> AppMiddleware Simple cxt
+  -> Middleware
+  -> AppMiddleware m apicxt BaseCxt cxt
   -> Proxy api
-  -> ServerT api (AppV cxt IO)
+  -> ServerT api app
   -> IO ()
-start' load ver amd pSer ser = loadAndRunSalak load $ do
-  app@AppConfig{..}    <- require "application"
-  c                    <- require "logging"
+start load vs md appmd proxy server = loadAndRunSalak load $ do
+  app@AppConfig{..} <- require "application"
+  c                 <- require "logging"
   withLogger name c $ \logger -> do
-    sw <- require "swagger"
-    ac <- require "actuator"
     sp <- askSalak
-    let portText = showText port
-        baseCxt  = sp :. LF logger :. EmptyContext
+    let baseCxt e = BaseCxt sp (LogFuncHolder logger) (VaultHolder e) app
     logInfo $ "Start Service [" <> name <> "] ..."
-    liftX $ runAM amd baseCxt id emptyHealth $ \cxt middleware hr -> do
-      when (enabled (sw :: SwaggerConfig)) $
-        logInfo    $ "Swagger enabled: http://localhost:" <> portText <> "/" <> pack (urlDir sw)
+    re <- liftIO $ emptyAMTD md
+    runAM (defaultMiddleware proxy vs >> appmd) (baseCxt Nothing) re $ \cxt AMTD{..} -> do
+      let portText = showText port
+          apicxt d = baseCxt d :. cxt :. EmptyContext
       logInfo      $ "Servant started on port(s): "       <> portText
-      let go :: forall a. (HasSwagger a, HasServer a cxt) => Proxy a -> ServerT a (AppV cxt IO) -> LoggingT IO ()
-          go x y = liftIO
-            $ serveWarp app
-            $ traceMiddleware (\v -> runAppT (VH v :. cxt) . spanNoNotifier)
-            $ middleware
-            $ errorMiddleware baseCxt
-            $ serveWithContextAndSwagger sw (baseInfo hostname name ver port) (Proxy @(Vault :> a)) cxt
-            $ \v -> hoistServerWithContext x (Proxy @cxt) (nt cxt v) y
-      if enabled (ac :: ActuatorConfig)
-        then go (Proxy @(api :<|> ActuatorEndpoint)) (ser :<|> actuatorEndpoint hr ac)
-        else go pSer ser
+      liftIO
+        $ serveWarp app
+        $ traceMiddleware (\_ _ -> return ())
+        $ errorMiddleware apicxt
+        $ middleware
+        $ serveYam
+          (Proxy @(Vault :> api))
+          (apicxt Nothing)
+          (\v -> hoistServerWithContext proxy (Proxy @apicxt) (runNT $ apicxt $ Just v) server)
+
+errorMiddleware :: HasLogger cxt => (Maybe Vault -> cxt) -> Middleware
+errorMiddleware cxt app req resH = app req resH `catch` (\e -> runAppT (cxt $ Just $ vault req) (logError $ pack $ show e) >> resH (whenException e))
 
 -- | default http server by warp.
 serveWarp :: AppConfig -> Application -> IO ()
@@ -167,19 +119,7 @@ serveWarp AppConfig{..} = runSettings
   & setOnExceptionResponse whenException
   & setSlowlorisSize slowlorisSize
 
--- | Empty span notifier.
-spanNoNotifier :: Span -> AppV cxt IO ()
-spanNoNotifier _ = return ()
-
--- | Empty Application Middleware.
-emptyAM :: AppMiddleware cxt cxt
-emptyAM = C.id
-
--- | Simple Application context
-type Simple = '[SourcePack, LogFuncHolder]
-
--- | Simple Application with logger context.
-type AppSimple = AppV Simple IO
+defaultMiddleware v p = actuatorMiddleware >> swaggerMiddleware v p id
 
 
 -- $use
@@ -194,5 +134,5 @@ type AppSimple = AppV Simple IO
 -- > service :: ServerT API AppSimple
 -- > service = return "world"
 -- >
--- > main = start "app" YAML (makeVersion []) (return emptyAM) (Proxy @API) (return service)
+-- > main = start (loadSalak def) (makeVersion []) id (return ()) (Proxy @API) service
 

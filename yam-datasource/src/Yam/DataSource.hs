@@ -25,6 +25,8 @@ module Yam.DataSource(
 import           Control.Exception              (bracket)
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
+import           Control.Monad.Reader
+import qualified Control.Monad.State            as MS
 import           Data.Acquire                   (withAcquire)
 import           Data.Conduit
 import qualified Data.Conduit.List              as CL
@@ -33,8 +35,8 @@ import           Data.Pool
 import qualified Data.Text                      as T
 import           Database.Persist.Sql           hiding (Key)
 import           Salak
-import           Servant
 import           Yam
+import           Yam.Middleware
 
 
 data DataSourceConfig = DataSourceConfig
@@ -60,7 +62,7 @@ data DataSourceProvider = DataSourceProvider
   { datasource :: LoggingT IO DataSource
   , migration  :: DB (LoggingT IO) ()
   , dbtype     :: T.Text
-  , check      :: DataSource -> IO HealthStatus
+  -- , check      :: DataSource -> IO HealthStatus
   }
 -- SqlPersistT ~ ReaderT SqlBackend
 type DB = SqlPersistT
@@ -78,25 +80,38 @@ selectValue :: (PersistField a, MonadUnliftIO m) => T.Text -> DB m [a]
 selectValue sql = fmap unSingle <$> rawSql sql []
 
 -- | Middleware context.
-type HasDataSource cxt = (HasLogger cxt, HasContextEntry cxt DataSource)
+type HasDataSource cxt = (HasBase cxt, HasCxt cxt DataSource)
 
 runTrans
   :: ( HasDataSource cxt
      , MonadIO m
-     , MonadUnliftIO m)
+     , MonadUnliftIO m
+     , MonadThrow m)
   => DB (AppT cxt m) a
   -> AppT cxt m a
 runTrans a = do
-  pool   <- getEntry
+  pool   <- askCxt
   logger <- askLoggerIO
   withRunInIO $ \run -> withResource pool $ run . \c -> runSqlConn a c { connLogFunc = logger }
 
-datasourceMiddleware :: DataSourceProvider -> AppMiddleware a (DataSource ': a)
-datasourceMiddleware DataSourceProvider{..} = AppMiddleware $ \c m h f -> askLoggerIO >>= \lc ->
-  liftIO $ bracket
-    (runLoggingT datasource lc)
-    destroyAllResources
-    (\ds -> runLoggingT (f (ds :. c) m (mergeHealth (check ds) "datasource" h)) lc)
+datasourceMiddleware :: HasBase cxt => DataSourceProvider -> AppMiddleware IO amtdcxt cxt DataSource
+datasourceMiddleware DataSourceProvider{..}
+  = AppMiddleware $ \f -> do
+    logInfo "datasource started"
+    amtd <- MS.get
+    cxt  <- ask
+    lf   <- askLoggerIO
+    amt2 <- liftIO
+      $ bracket (runLoggingT datasource lf) destroyAllResources
+      $ \ds -> snd <$> runAMT amtd cxt (f ds)
+    MS.put amt2
+
+
+ -- \c m h f -> askLoggerIO >>= \lc ->
+ --  liftIO $ bracket
+ --    (runLoggingT datasource lc)
+ --    destroyAllResources
+ --    (\ds -> runLoggingT (f (ds :. c) m (mergeHealth (check ds) "datasource" h)) lc)
 
 
 

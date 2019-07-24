@@ -1,7 +1,8 @@
-{-# LANGUAGE CPP            #-}
-{-# LANGUAGE ImplicitParams #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE CPP                 #-}
+{-# LANGUAGE ImplicitParams      #-}
 
-module Yam.Prelude(
+module Yam.Internal.Prelude(
   -- * Utilities
     randomString
   , showText
@@ -9,7 +10,6 @@ module Yam.Prelude(
   , randomCode
   , whenException
   -- * Reexport Functions
-  , LogFunc
   , Default(..)
   , Text
   , pack
@@ -19,9 +19,6 @@ module Yam.Prelude(
   , SomeException(..)
   , fromException
   , bracket
-  , throw
-  , try
-  , catch
   , when
   , lift
   , (<>)
@@ -32,8 +29,6 @@ module Yam.Prelude(
   , logDebug
   , Loc(..)
   , MonadIO(..)
-  , HasContextEntry(..)
-  , TryContextEntry(..)
   , fromMaybe
   , (&)
   , decodeUtf8
@@ -42,10 +37,12 @@ module Yam.Prelude(
   , Version
   , Middleware
   , RunSalak
+  , throwM
   ) where
 
 import           Control.Exception                   hiding (Handler)
 import           Control.Monad
+import           Control.Monad.Catch                 (throwM)
 import           Control.Monad.Except
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
@@ -70,8 +67,6 @@ import           Servant
 import           Servant.Server.Internal.ServerError
 import           System.IO.Unsafe                    (unsafePerformIO)
 import           System.Random.MWC
-
-type LogFunc = Loc -> LogSource -> LogLevel -> LogStr -> IO ()
 
 {-# NOINLINE randomGen #-}
 randomGen :: GenIO
@@ -113,19 +108,6 @@ randomCode seed v = do
   let l = V.length seed
   vs <- replicateM v (uniformR (0, l - 1) randomGen)
   return $ (seed V.!) <$> vs
-
--- | This class provide a optional supports for get entry from 'Context'.
-class TryContextEntry (cxt :: [*]) (entry :: *) where
-  tryContextEntry :: Context cxt -> Maybe entry
-
-instance {-# OVERLAPPABLE #-} TryContextEntry as entry => TryContextEntry (a ': as) entry where
-  tryContextEntry (_ :. as) = tryContextEntry as
-
-instance {-# OVERLAPPABLE #-} TryContextEntry a entry where
-  tryContextEntry _ = Nothing
-
-instance TryContextEntry (entry ': as) entry where
-  tryContextEntry (a :. _) = Just a
 
 
 

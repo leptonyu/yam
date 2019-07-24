@@ -1,14 +1,14 @@
-resolver: nightly-2019-07-24
+resolver: nightly-2019-07-25
 packages:
 - yam
 - yam-datasource
 - yam-redis
-- example
+# - ../boots
+  #- example
 extra-deps:
-  #- ../salak/salak
-  #- ../salak/salak-yaml
-- salak-0.3
-- salak-yaml-0.3
+- boots-0.0.2
+- salak-0.3.1
+- salak-yaml-0.3.1
 - persistent-2.10.0
 
 pvp-bounds: both

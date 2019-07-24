@@ -1,11 +1,11 @@
-module Yam.Config(
+module Yam.Internal.Config(
     AppConfig(..)
   , module Network.Wai.Handler.Warp
   ) where
 
 import           Network.Wai.Handler.Warp
 import           Salak
-import           Yam.Prelude
+import           Yam.Internal.Prelude
 
 -- | Application Configuration.
 data AppConfig = AppConfig
@@ -18,7 +18,7 @@ data AppConfig = AppConfig
 instance Default AppConfig where
   def = AppConfig "application" "localhost" 8888 2048
 
-instance MonadCatch m => FromProp m AppConfig where
+instance Monad m => FromProp m AppConfig where
   fromProp = AppConfig
     <$> "name"           .?: name
     <*> "host"           .?: hostname

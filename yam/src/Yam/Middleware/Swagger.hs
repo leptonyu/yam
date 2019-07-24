@@ -1,22 +1,24 @@
-{-# LANGUAGE NoPolyKinds #-}
-module Yam.Swagger(
+module Yam.Middleware.Swagger(
     SwaggerConfig(..)
-  , serveWithContextAndSwagger
+  , swaggerMiddleware
   , baseInfo
   , SwaggerTag
   ) where
 
-import           Control.Lens       hiding (Context)
+import           Control.Lens         hiding (Context)
+import           Control.Monad.Reader
+import           Data.Proxy
 import           Data.Reflection
-import           Data.Swagger
-import           Data.Version       (showVersion)
+import           Data.Swagger         hiding (name, port)
+import           Data.Version         (showVersion)
 import           GHC.TypeLits
 import           Salak
 import           Servant
 import           Servant.Client
 import           Servant.Swagger
 import           Servant.Swagger.UI
-import           Yam.Prelude
+import           Yam.Internal
+import           Yam.Middleware
 
 -- | Swagger Configuration
 data SwaggerConfig = SwaggerConfig
@@ -31,23 +33,18 @@ instance MonadCatch m => FromProp m SwaggerConfig where
     <*> "schema"  .?= "swagger-ui.json"
     <*> "enabled" .?= True
 
--- | Serve with swagger.
-serveWithContextAndSwagger
-  :: forall api context. (HasSwagger api, HasServer api context)
-  => SwaggerConfig -- ^ Swagger configuration.
-  -> (Swagger -> Swagger) -- ^ Swagger modification.
-  -> Proxy api -- ^ Application API Proxy.
-  -> Context context -- ^ Application context.
-  -> ServerT api Handler -- ^ Application API Server
-  -> Application
-serveWithContextAndSwagger SwaggerConfig{..} g5 proxy cxt api =
-  if enabled
-    then reifySymbol urlDir $ \pd -> reifySymbol urlSchema $ \ps ->
-         serveWithContext (go proxy pd ps) cxt (swaggerSchemaUIServer (g5 $ toSwagger proxy) :<|> api)
-    else serveWithContext proxy cxt api
+swaggerMiddleware :: (HasSwagger api, HasBase cxt, MonadIO m) => Proxy api -> Version -> (Swagger -> Swagger) -> AppMiddleware m amtdcxt cxt ()
+swaggerMiddleware proxy v ff = do
+  SwaggerConfig{..} <- require "swagger"
+  AppConfig{..}     <- askCxt
+  when enabled $
+      logInfo  $ "Swagger enabled: http://localhost:" <> pack (show port) <> "/" <> pack urlDir
+  reifySymbol urlDir
+    $ \pd -> reifySymbol urlSchema
+    $ \ps -> modifyServer' enabled (gop pd ps) (swaggerSchemaUIServer $ ff $ baseInfo hostname name v port $ toSwagger proxy)
   where
-    go :: forall dir schema. Proxy api -> Proxy dir -> Proxy schema -> Proxy (SwaggerSchemaUI dir schema :<|> api)
-    go _ _ _ = Proxy
+    gop :: forall a b. Proxy a -> Proxy b -> Proxy (SwaggerSchemaUI a b)
+    gop _ _ = Proxy
 
 -- | Swagger modification
 baseInfo
@@ -85,4 +82,3 @@ instance (HasSwagger api, KnownSymbol name, KnownSymbol desp)
       go  = pack . symbolVal
       g2 "" = Nothing
       g2 a  = Just a
-

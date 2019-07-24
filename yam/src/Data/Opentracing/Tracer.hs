@@ -18,7 +18,7 @@ import           Control.Monad.IO.Class
 import qualified Data.HashMap.Lazy      as HM
 import           Data.Opentracing.Types
 -- import           Data.Time.Clock.POSIX
-import           Yam.Prelude
+import           Yam.Internal.Prelude
 
 type SpanName = Text
 

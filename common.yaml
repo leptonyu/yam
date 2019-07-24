@@ -1,5 +1,5 @@
 - &legal
-  version:             0.7
+  version:             0.7.1
   homepage:            https://github.com/leptonyu/yam#readme
   license:             BSD3
   author:              Daniel YU
@@ -38,7 +38,7 @@
     - OverloadedStrings
     - PartialTypeSignatures
     - PatternGuards
-    - PolyKinds
+    # - PolyKinds
     - RankNTypes
     - RecordWildCards
     - ScopedTypeVariables

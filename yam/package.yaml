@@ -10,7 +10,7 @@ extra-source-files:
 
 dependencies:
   - base >= 4.10 && < 5
-  - salak >= 0.3 && < 0.4
+  - salak
   - aeson
   - text
   - bytestring
@@ -41,28 +41,32 @@ dependencies:
   - exceptions
   - transformers
   - aeson
+  - boots
+  - microlens
 
 library:
   source-dirs: src
   exposed-modules:
     - Yam
+    - Yam.Middleware
     - Yam.Middleware.Client
+    - Yam.Middleware.Actuator
+    - Yam.Middleware.Swagger
+
+    - Yam.Boots
 
   other-modules:
-    - Yam.Swagger
-    - Yam.Logger
-    - Yam.App
+    - Yam.Internal
+    - Yam.Internal.Logger
+    - Yam.Internal.App
+    - Yam.Internal.Types
+    - Yam.Internal.Config
+    - Yam.Internal.Prelude
     
-    - Yam.Prelude
-    - Yam.Config
+    - Yam.Actuator.Refresh
+    - Yam.Actuator.Health
 
-    - Yam.Middleware
     - Yam.Middleware.Trace
-    - Yam.Middleware.Error
-    
-    - Yam.Server
-    - Yam.Server.Refresh
-    - Yam.Server.Health
     
     - Data.Opentracing
     - Data.Opentracing.Types

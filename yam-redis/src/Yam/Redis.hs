@@ -20,8 +20,10 @@ module Yam.Redis(
 
 import           Control.Exception              (bracket)
 import           Control.Monad.IO.Class         (MonadIO)
+import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
 import           Control.Monad.Reader
+import qualified Control.Monad.State            as MS
 import qualified Data.ByteString.Char8          as BC
 import           Data.Default
 import           Data.Word
@@ -29,11 +31,12 @@ import           Database.Redis
 import           Salak
 import           Servant
 import           Yam
+import           Yam.Middleware
 
 instance Default ConnectInfo where
   def = defaultConnectInfo
 
-instance MonadCatch m => FromProp m ConnectInfo where
+instance Monad m => FromProp m ConnectInfo where
   fromProp = ConnInfo
     <$> "host"      .?: connectHost
     <*> "port"      .?: connectPort
@@ -44,17 +47,17 @@ instance MonadCatch m => FromProp m ConnectInfo where
     <*> return Nothing
     <*> return Nothing
 
-instance MonadThrow m => FromProp m PortID where
+instance Monad m => FromProp m PortID where
   fromProp = PortNumber . fromIntegral <$> (fromProp :: Prop m Word16)
 
 -- | Middleware context type.
 newtype REDIS = REDIS Connection
 -- | Middleware context.
-type HasRedis cxt = (HasLogger cxt, HasContextEntry cxt REDIS)
+type HasRedis cxt = (HasBase cxt, HasCxt cxt REDIS)
 
 instance (HasRedis cxt, MonadIO m) => MonadRedis (AppT cxt m) where
   liftRedis a = do
-    REDIS conn <- getEntry
+    REDIS conn <- askCxt
     liftIO $ runRedis conn a
 
 runR :: (MonadIO m, HasRedis cxt) => Redis (Either Reply a) -> AppT cxt m a
@@ -71,16 +74,27 @@ multiE a = go <$> multiExec a
     go  TxAborted    = Left $ Error "RedisTx aborted"
     go (TxError   e) = Left $ Error $ BC.pack e
 
-redisMiddleware :: HasSalaks a => AppMiddleware a (REDIS : a)
-redisMiddleware = AppMiddleware $ \cxt m h f -> do
-    logInfo "Redis loaded"
-    ci <- runAppT cxt (require "redis")
-    lf <- askLoggerIO
-    liftIO
-      $ bracket (connect ci) disconnect
-      $ \conn -> runLoggingT (f (REDIS conn :. cxt) m (mergeHealth (go conn) "redis" h)) lf
-  where
-    go c = runRedis c ping >> return UP
+redisMiddleware :: HasBase cxt => AppMiddleware IO amtdcxt cxt REDIS
+redisMiddleware = AppMiddleware $ \f -> do
+  logInfo "Redis loaded"
+  ci    <- require "redis"
+  amtd  <- MS.get
+  cxt   <- ask
+  amtd2 <- liftIO
+    $ bracket (connect ci) disconnect
+    $ \conn -> snd <$> runAMT amtd cxt (f (REDIS conn))
+  MS.put amtd2
+
+-- instance AppMiddleware cxt m REDIS where
+--   build f = do
+--     logInfo "Redis loaded"
+--     ci <- runAppT cxt (require "redis")
+--     lf <- askLoggerIO
+--     liftIO
+--       $ bracket (connect ci) disconnect
+--       $ \conn -> runLoggingT (f (REDIS conn :. cxt) m (mergeHealth (go conn) "redis" h)) lf
+--     where
+--       go c = runRedis c ping >> return UP
 
 ttlOpts :: Integer -> SetOpts
 ttlOpts seconds = SetOpts (Just seconds) Nothing Nothing

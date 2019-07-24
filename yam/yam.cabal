@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 5637a758c838a255a1971692ca1865c5ea258c076112899b692745f44c531e4d
+-- hash: 3c96fa898c2a19740a8f6a8b7b2c75265470d6add55880b6fc6692b2995c74f8
 
 name:           yam
-version:        0.7
+version:        0.7.1
 synopsis:       A wrapper of servant
 description:    A out-of-the-box wrapper of [servant](https://hackage.haskell.org/package/servant-server).
 category:       Web
@@ -25,32 +25,35 @@ extra-source-files:
 library
   exposed-modules:
       Yam
-      Yam.Middleware.Client
-  other-modules:
-      Yam.Swagger
-      Yam.Logger
-      Yam.App
-      Yam.Prelude
-      Yam.Config
       Yam.Middleware
+      Yam.Middleware.Client
+      Yam.Middleware.Actuator
+      Yam.Middleware.Swagger
+      Yam.Boots
+  other-modules:
+      Yam.Internal
+      Yam.Internal.Logger
+      Yam.Internal.App
+      Yam.Internal.Types
+      Yam.Internal.Config
+      Yam.Internal.Prelude
+      Yam.Actuator.Refresh
+      Yam.Actuator.Health
       Yam.Middleware.Trace
-      Yam.Middleware.Error
-      Yam.Server
-      Yam.Server.Refresh
-      Yam.Server.Health
       Data.Opentracing
       Data.Opentracing.Types
       Data.Opentracing.Tracer
       Data.Opentracing.Simple
   hs-source-dirs:
       src
-  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       aeson
     , base >=4.10 && <5
     , base16-bytestring
     , binary
+    , boots
     , bytestring
     , data-default
     , exceptions
@@ -59,11 +62,12 @@ library
     , http-types
     , lens
     , menshen
+    , microlens
     , monad-logger
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.3 && <0.4
+    , salak
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17
@@ -89,23 +93,25 @@ test-suite spec
       Data.Opentracing.Tracer
       Data.Opentracing.Types
       Yam
-      Yam.App
-      Yam.Config
-      Yam.Logger
+      Yam.Actuator.Health
+      Yam.Actuator.Refresh
+      Yam.Boots
+      Yam.Internal
+      Yam.Internal.App
+      Yam.Internal.Config
+      Yam.Internal.Logger
+      Yam.Internal.Prelude
+      Yam.Internal.Types
       Yam.Middleware
+      Yam.Middleware.Actuator
       Yam.Middleware.Client
-      Yam.Middleware.Error
+      Yam.Middleware.Swagger
       Yam.Middleware.Trace
-      Yam.Prelude
-      Yam.Server
-      Yam.Server.Health
-      Yam.Server.Refresh
-      Yam.Swagger
       Paths_yam
   hs-source-dirs:
       test
       src
-  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards PolyKinds RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
+  default-extensions: AutoDeriveTypeable BangPatterns BinaryLiterals ConstraintKinds DataKinds DefaultSignatures DeriveDataTypeable DeriveFoldable DeriveFunctor DeriveGeneric DeriveTraversable DuplicateRecordFields DoAndIfThenElse EmptyDataDecls ExistentialQuantification FlexibleContexts FlexibleInstances FunctionalDependencies GADTs GeneralizedNewtypeDeriving InstanceSigs KindSignatures LambdaCase MonadFailDesugaring MultiParamTypeClasses MultiWayIf NamedFieldPuns OverloadedStrings PartialTypeSignatures PatternGuards RankNTypes RecordWildCards ScopedTypeVariables StandaloneDeriving TupleSections TypeApplications TypeFamilies TypeOperators TypeSynonymInstances ViewPatterns
   ghc-options: -Wall -fno-warn-orphans -fno-warn-missing-signatures
   build-depends:
       QuickCheck <2.14
@@ -113,6 +119,7 @@ test-suite spec
     , base >=4.10 && <5
     , base16-bytestring
     , binary
+    , boots
     , bytestring
     , data-default
     , exceptions
@@ -122,11 +129,12 @@ test-suite spec
     , http-types
     , lens
     , menshen
+    , microlens
     , monad-logger
     , mtl
     , mwc-random
     , reflection
-    , salak >=0.3 && <0.4
+    , salak
     , scientific
     , servant-client >=0.16 && <0.17
     , servant-server >=0.16 && <0.17

@@ -1,27 +1,24 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Yam.Logger(
+module Yam.Internal.Logger(
   -- * Logger Function
     withLogger
-  , getLogger
   , extensionLogKey
-  , liftX
   , LogConfig(..)
-  , HasLogger
-  , LogFuncHolder(..)
-  , VaultHolder(..)
   ) where
 import           Control.Monad.IO.Unlift
 import           Control.Monad.Logger.CallStack
-import           Data.Text                      (unpack)
+import           Data.Text                      (toLower, unpack)
 import qualified Data.Vault.Lazy                as L
 import           Data.Word
 import           Salak
 import           System.IO.Unsafe               (unsafePerformIO)
 import           System.Log.FastLogger
-import           Yam.Prelude
+import           Yam.Internal.App
+import           Yam.Internal.Prelude
+import           Yam.Internal.Types
 
-instance MonadThrow m => FromProp m LogLevel where
-  fromProp = readEnum fromEnumProp
+instance Monad m => FromProp m LogLevel where
+  fromProp = readEnum (fromEnumProp.toLower)
     where
       fromEnumProp "debug" = Right   LevelDebug
       fromEnumProp "info"  = Right   LevelInfo
@@ -48,7 +45,7 @@ data LogConfig = LogConfig
 instance Default LogConfig where
   def = LogConfig 4096 "" 10485760 256 (return LevelInfo)
 
-instance (MonadIO m, MonadCatch m) => FromProp m LogConfig where
+instance MonadIO m => FromProp m LogConfig where
   fromProp = LogConfig
     <$> "buffer-size" .?: bufferSize
     <*> "file"        .?: file
@@ -72,10 +69,6 @@ newLogger name LogConfig{..} = do
         let locate = if ll /= LevelError then "" else " @" <> toLogStr loc_filename <> toLogStr (show loc_start)
         in toLogStr t <> " " <> toStr ll <> xn <> toLogStr loc_module <> locate <> " - " <> s <> "\n"
 
-
-liftX :: MonadIO m => LoggingT IO () -> LoggingT m ()
-liftX f = askLoggerIO >>= liftIO . runLoggingT f
-
 withLogger :: (MonadUnliftIO m) => Text -> LogConfig -> (LogFunc -> LoggingT m a) -> m a
 withLogger n lc action = do
   f <- askRunInIO
@@ -88,19 +81,25 @@ addTrace f tid a b c d = let p = "[" <> toLogStr tid <> "] " in f a b c (p <> d)
 extensionLogKey :: L.Key Text
 extensionLogKey = unsafePerformIO L.newKey
 
-getLogger :: Maybe VaultHolder -> LogFuncHolder -> LogFunc
-getLogger (Just (VH vault)) (LF logger) =
+getLogger :: VaultHolder -> LogFuncHolder -> LogFunc
+getLogger (VaultHolder (Just vault)) (LogFuncHolder logger) =
   let {-# INLINE nlf #-}
       nlf x (Just t) = addTrace x t
       nlf x _        = x
   in nlf logger $ L.lookup extensionLogKey vault
-getLogger _ (LF logger) = logger
+getLogger _ (LogFuncHolder logger) = logger
 
--- | Holder for 'LogFunc'
-newtype LogFuncHolder = LF LogFunc
--- | Holder for 'Vault'
-newtype VaultHolder   = VH L.Vault
+instance (HasLogger cxt, MonadIO m) => MonadLogger (AppT cxt m) where
+  monadLoggerLog a b c d = do
+    f <- askCxt
+    v <- askCxt
+    liftIO $ getLogger v f a b c (toLogStr d)
 
--- | Context with logger.
-type HasLogger cxt = (HasContextEntry cxt LogFuncHolder, TryContextEntry cxt VaultHolder)
+instance (HasLogger cxt, MonadIO m) => MonadLoggerIO (AppT cxt m) where
+  askLoggerIO = do
+    f <- askCxt
+    v <- askCxt
+    return (getLogger v f)
+
+
 

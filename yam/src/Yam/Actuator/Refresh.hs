@@ -1,15 +1,13 @@
-module Yam.Server.Refresh where
+module Yam.Actuator.Refresh where
 
-import           Data.Text   (Text, pack)
+import           Data.Text    (Text, pack)
 import           Salak
 import           Servant
-import           Yam.App
-import           Yam.Logger
-import           Yam.Prelude
+import           Yam.Internal
 
 type RefreshEndpoint = "refresh" :> Post '[PlainText] Text
 
-refreshEndpoint :: (HasSalaks cxt, HasLogger cxt, MonadIO m) => Bool -> AppT cxt m Text
+refreshEndpoint :: (HasBase cxt, MonadIO m) => Bool -> AppT cxt m Text
 refreshEndpoint True = do
   io <- askReload
   ReloadResult{..} <- liftIO io

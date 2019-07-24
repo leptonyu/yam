@@ -21,8 +21,7 @@ import           Network.Wai
 import           Salak
 import           Servant
 import           System.IO.Unsafe    (unsafePerformIO)
-import           Yam.Logger
-import           Yam.Prelude
+import           Yam.Internal
 
 data TraceConfig = TraceConfig
   { enabled :: Bool
