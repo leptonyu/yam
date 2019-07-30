@@ -1,4 +1,5 @@
-# yam
+# Archived due to [鬼谷子](https://github.com/leptonyu/guiguzi)
+
 
 | package name | version |
 |-|-|
